@@ -1,0 +1,39 @@
+{
+  "name": "peculiar-server",
+  "version": "1.0.0",
+  "description": "",
+  "main": "./src/api.js",
+  "scripts": {
+    "dev": "nodemon ./src/api.ts",
+    "start": "node ./dist/api.js",
+    "build": "tsc --project ./",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/evgeny-rov/toolbelt.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/evgeny-rov/toolbelt/issues"
+  },
+  "homepage": "https://github.com/evgeny-rov/toolbelt#readme",
+  "dependencies": {
+    "ws": "^8.5.0"
+  },
+  "devDependencies": {
+    "@types/node": "^17.0.17",
+    "@types/ws": "^8.5.3",
+    "@typescript-eslint/eslint-plugin": "^5.11.0",
+    "@typescript-eslint/parser": "^5.11.0",
+    "eslint": "^8.9.0",
+    "eslint-config-airbnb-base": "^15.0.0",
+    "eslint-config-prettier": "^8.3.0",
+    "eslint-plugin-import": "^2.25.4",
+    "nodemon": "^2.0.15",
+    "ts-node": "^10.5.0",
+    "typescript": "^4.5.5"
+  }
+}
