@@ -1,9 +1,18 @@
 import { WebSocket } from 'ws';
-import uuid from '../helpers/uuid';
-import { createState, exchange } from './helpers';
+import createState from '../helpers/createState';
+import { transact, swap, tether } from '../helpers/transaction';
+
+type Action = {
+  type: 'AUTH' | 'HANDSHAKE' | 'SECURED' | 'MESSAGE';
+  body?: any;
+};
+
+type Response = Action & {
+  status: 'ok';
+};
 
 export interface Actor {
-  pk: string;
+  data: string;
   ws: WebSocket;
 }
 
@@ -12,51 +21,53 @@ export interface Chat {
   connect: (ws: WebSocket) => void;
 }
 
-const createActor = (connection: WebSocket, pk: string) => ({
-  pk,
+const createActor = (connection: WebSocket, data: string): Actor => ({
+  data,
   ws: connection,
 });
 
-const createChat = (): Chat => {
-  const id = uuid();
+const createChat = (id: string, onTerminate: (id: string) => void): Chat => {
   const actors = createState<Actor[]>([]);
   const isSealed = createState(false);
 
-  const coordinate = () => {
-    if (actors.get().length === 2 && actors.get().every((c) => c.pk)) {
-      const [actor1, actor2] = actors.get();
+  const terminate = (reason: string, pendingConnections: WebSocket[] = []) => {
+    pendingConnections.forEach((ws) => ws.close(1000, reason));
+    actors.get().forEach((actor) => actor.ws.close(1000, reason));
+    actors.set([]);
+    onTerminate(id);
+  };
 
-      const hand1 = exchange(actor1.ws, {
-        type: 'HANDSHAKE',
-        body: actor2.pk,
-      });
-      const hand2 = exchange(actor2.ws, {
-        type: 'HANDSHAKE',
-        body: actor1.pk,
+  const coordinate = async () => {
+    console.log(actors.get().length);
+    if (
+      actors.get().length !== 2 ||
+      !actors.get().every((actor) => Boolean(actor.data))
+    ) {
+      console.log('not allowed');
+      return;
+    }
+
+    const [actor1, actor2] = actors.get();
+    try {
+      await swap<Action, Response>({
+        participants: [actor1, actor2],
+        outgoingRequest: { type: 'HANDSHAKE' },
+        validResponse: { type: 'HANDSHAKE', status: 'ok' },
       });
 
-      Promise.all([hand1, hand2])
-        .then(() => {
-          actors
-            .get()
-            .forEach(({ ws }) => ws.send(JSON.stringify({ type: 'SECURED' })));
-          actor1.ws.on('message', (rawData) =>
-            actor2.ws.send(rawData.toString())
-          );
-          actor2.ws.on('message', (rawData) =>
-            actor1.ws.send(rawData.toString())
-          );
-        })
-        .catch((e) => {
-          console.log('error on handshake', e);
-          // terminate
-        });
+      actors
+        .get()
+        .forEach(({ ws }) => ws.send(JSON.stringify({ type: 'SECURED' })));
+
+      tether([actor1.ws, actor2.ws]);
+    } catch (e) {
+      terminate('error on handshake');
     }
   };
 
-  const connect = (ws: WebSocket) => {
+  const connect = async (ws: WebSocket) => {
     if (isSealed.get()) {
-      ws.close();
+      ws.close(1000, 'not allowed');
       return;
     }
 
@@ -64,15 +75,22 @@ const createChat = (): Chat => {
       isSealed.set(true);
     }
 
-    exchange(ws, { type: 'AUTH', body: { chatId: id } })
-      .then((response) => {
-        isSealed.set(true);
-        actors.set([...actors.get(), createActor(ws, response.body)]);
-        coordinate();
-      })
-      .catch((e) => {
-        console.log('error on connection', e);
-      });
+    try {
+      const response = await transact<Action, Response>(
+        ws,
+        { type: 'AUTH', body: { chatId: id } },
+        { type: 'AUTH', status: 'ok' }
+      );
+
+      actors.set([...actors.get(), createActor(ws, response.body)]);
+      coordinate();
+    } catch (e) {
+      if (e instanceof Error) {
+        terminate(e.message, [ws]);
+      } else {
+        terminate('error on connection', [ws]);
+      }
+    }
   };
 
   return {
