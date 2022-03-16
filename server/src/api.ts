@@ -1,37 +1,35 @@
 import { WebSocketServer, WebSocket } from 'ws';
 import url from 'url';
 
-import createChat from './chat/chat';
-import type { Chat } from './chat/chat';
 import uuid from './helpers/uuid';
+import { tether, handshake } from './helpers/connection';
 
 const wss = new WebSocketServer({ port: 8080 });
 
-const chatRooms = new Map<string, Chat>();
+const waitingRoom = new Map<string, WebSocket>();
 
-const handleTerminate = (id: string) => {
-  chatRooms.delete(id);
-  console.log('termination event', chatRooms.get(id));
-};
-
-const handleCreateNewChat = (ws: WebSocket) => {
-  const id = uuid();
-  const chat = createChat(id, handleTerminate);
-  chatRooms.set(id, chat);
-  chat.connect(ws);
-};
-
-wss.on('connection', (ws, req) => {
+wss.on('connection', async (ws, req) => {
   const { pathname } = url.parse(req.url ?? '', true);
-  const [, chatId] = (pathname ?? '').split('/');
+  const [, providedChatId] = (pathname ?? '').split('/');
 
-  const chat = chatRooms.get(chatId);
+  const partner = waitingRoom.get(providedChatId);
 
-  if (chat) {
-    chat.connect(ws);
-  } else if (!chatId) {
-    handleCreateNewChat(ws);
-  } else {
-    ws.close();
+  if (providedChatId && !partner) {
+    ws.close(1000, 'you smell like fish');
+  }
+
+  try {
+    const chatId = providedChatId || uuid();
+    await handshake(ws, { chatId });
+
+    if (partner) {
+      tether([partner, ws]);
+      waitingRoom.delete(chatId);
+    } else {
+      waitingRoom.set(chatId, ws);
+      ws.on('close', () => waitingRoom.delete(chatId));
+    }
+  } catch (e) {
+    ws.close(1000, String(e));
   }
 });
