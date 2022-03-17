@@ -53,6 +53,21 @@ export const tether = (participants: [WebSocket, WebSocket]) => {
   p2.on('message', (data) => p1.send(data.toString()));
 };
 
+export const validateConnection = (ws: WebSocket) =>
+  new Promise((res, rej) => {
+    const handleResponse = (rawData: RawData) => {
+      if (rawData.toString() === process.env.SECRET) {
+        res('');
+      } else {
+        rej(new Error('you smell like fish'));
+      }
+    };
+
+    ws.send('hello stranger, peculiar world we live in');
+    ws.once('message', handleResponse);
+    ws.once('close', () => rej(new Error('connection closed')));
+  });
+
 export const handshake = (ws: WebSocket, data: Record<string, any>) =>
   communicate<OutgoingReport, IncomingReport>(
     ws,

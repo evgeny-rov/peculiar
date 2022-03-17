@@ -1,8 +1,9 @@
+import 'dotenv/config';
 import { WebSocketServer, WebSocket } from 'ws';
 import url from 'url';
 
 import uuid from './helpers/uuid';
-import { tether, handshake } from './helpers/connection';
+import { tether, handshake, validateConnection } from './helpers/connection';
 
 const wss = new WebSocketServer({ port: 8080 });
 
@@ -20,6 +21,7 @@ wss.on('connection', async (ws, req) => {
 
   try {
     const chatId = providedChatId || uuid();
+    await validateConnection(ws);
     await handshake(ws, { chatId });
 
     if (partner) {
