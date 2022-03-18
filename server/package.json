@@ -11,15 +11,15 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/evgeny-rov/toolbelt.git"
+    "url": "git+https://github.com/evgeny-rov/peculiar.git"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/evgeny-rov/toolbelt/issues"
+    "url": "https://github.com/evgeny-rov/peculiar/issues"
   },
-  "homepage": "https://github.com/evgeny-rov/toolbelt#readme",
+  "homepage": "https://github.com/evgeny-rov/peculiar#readme",
   "dependencies": {
     "dotenv": "^16.0.0",
     "ws": "^8.5.0"
