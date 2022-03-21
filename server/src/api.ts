@@ -1,37 +1,57 @@
 import 'dotenv/config';
+import { createServer } from 'http';
 import { WebSocketServer, WebSocket } from 'ws';
-import url from 'url';
+import getChidFromUrl from './helpers/getChidFromUrl';
 
 import uuid from './helpers/uuid';
-import { tether, handshake, validateConnection } from './helpers/connection';
-
-const wss = new WebSocketServer({ port: 8080 });
+import validateRequest from './helpers/validateRequest';
+import { sendEnsuredChidMessage } from './communication/messages';
+import establishConnection from './communication/establishConnection';
 
 const waitingRoom = new Map<string, WebSocket>();
 
-wss.on('connection', async (ws, req) => {
-  const { pathname } = url.parse(req.url ?? '', true);
-  const [, providedChatId] = (pathname ?? '').split('/');
+const PORT = 8080;
+const server = createServer();
+const wss = new WebSocketServer({ noServer: true });
 
-  const partner = waitingRoom.get(providedChatId);
+const cleanup = (chid: string) => () => {
+  waitingRoom.delete(chid);
+};
 
-  if (providedChatId && !partner) {
-    ws.close(1000, 'you smell like fish');
+const handleError = (e: Error, ws: WebSocket) => {
+  if (ws.readyState === ws.OPEN) {
+    ws.close(1000, e.message);
   }
+};
 
+wss.on('connection', async (ws, req) => {
   try {
-    const chatId = providedChatId || uuid();
-    await validateConnection(ws);
-    await handshake(ws, { chatId });
+    const chid = getChidFromUrl(req.url);
 
-    if (partner) {
-      tether([partner, ws]);
-      waitingRoom.delete(chatId);
+    if (chid) {
+      await establishConnection(ws, waitingRoom.get(chid));
+      cleanup(chid);
     } else {
-      waitingRoom.set(chatId, ws);
-      ws.on('close', () => waitingRoom.delete(chatId));
+      const newChid = uuid();
+      await sendEnsuredChidMessage(ws, newChid);
+      waitingRoom.set(newChid, ws);
+      ws.on('close', () => cleanup(newChid));
     }
   } catch (e) {
-    ws.close(1000, String(e));
+    if (e instanceof Error) handleError(e, ws);
   }
 });
+
+server.on('upgrade', (request, socket, head) => {
+  const isRequestValid = validateRequest(request, waitingRoom);
+
+  if (isRequestValid) {
+    wss.handleUpgrade(request, socket, head, (ws) => {
+      wss.emit('connection', ws, request);
+    });
+  } else {
+    socket.destroy();
+  }
+});
+
+server.listen(PORT);
