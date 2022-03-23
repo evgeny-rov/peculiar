@@ -1,57 +1,75 @@
-import 'dotenv/config';
-import { createServer } from 'http';
-import { WebSocketServer, WebSocket } from 'ws';
-import getChidFromUrl from './helpers/getChidFromUrl';
+import { WebSocketServer, WebSocket, RawData } from 'ws';
+import uuid from './uuid';
 
-import uuid from './helpers/uuid';
-import validateRequest from './helpers/validateRequest';
-import { sendEnsuredChidMessage } from './communication/messages';
-import establishConnection from './communication/establishConnection';
+type CommandName = 'create' | 'connect';
+type Command = [CommandName, string];
 
 const waitingRoom = new Map<string, WebSocket>();
+const wss = new WebSocketServer({ port: 8080 });
 
-const PORT = 8080;
-const server = createServer();
-const wss = new WebSocketServer({ noServer: true });
+const validCommands = ['create', 'connect'];
 
-const cleanup = (chid: string) => () => {
-  waitingRoom.delete(chid);
+const isCommandValid = (data: string[]): data is Command =>
+  validCommands.includes(data[0]);
+
+const cleanup = (id: string) => waitingRoom.delete(id);
+
+const handleClose = (
+  reason: string,
+  ...clients: [WebSocket, ...WebSocket[]]
+) => {
+  clients.forEach((ws) => ws.close(1000, reason));
 };
 
-const handleError = (e: Error, ws: WebSocket) => {
-  if (ws.readyState === ws.OPEN) {
-    ws.close(1000, e.message);
-  }
-};
+const commandResolvers: Record<
+  CommandName,
+  (ws: WebSocket, command: Command) => void
+> = {
+  create: (ws) => {
+    const id = uuid();
+    waitingRoom.set(id, ws);
+    ws.on('close', () => cleanup(id));
+    ws.send(id);
+  },
+  connect: (ws, command) => {
+    const [, id] = command;
+    const peer = waitingRoom.get(id);
 
-wss.on('connection', async (ws, req) => {
-  try {
-    const chid = getChidFromUrl(req.url);
+    if (peer) {
+      cleanup(id);
+      const peers = [ws, peer];
 
-    if (chid) {
-      await establishConnection(ws, waitingRoom.get(chid));
-      cleanup(chid);
+      peers.forEach((p, idx, arr) => {
+        const nextPeer = arr[(idx + 1) % arr.length];
+
+        p.on('close', () => handleClose('Peer closed connection', nextPeer));
+        p.on('message', (data) => nextPeer.send(data.toString()));
+        p.send('connected');
+      });
     } else {
-      const newChid = uuid();
-      await sendEnsuredChidMessage(ws, newChid);
-      waitingRoom.set(newChid, ws);
-      ws.on('close', () => cleanup(newChid));
+      handleClose('Not found', ws);
     }
-  } catch (e) {
-    if (e instanceof Error) handleError(e, ws);
-  }
-});
+  },
+};
 
-server.on('upgrade', (request, socket, head) => {
-  const isRequestValid = validateRequest(request, waitingRoom);
+const handleConnection = (ws: WebSocket) => {
+  const TIMEOUT_AFTER = 30000;
+  const timerId = setTimeout(() => handleClose('Timed out', ws), TIMEOUT_AFTER);
 
-  if (isRequestValid) {
-    wss.handleUpgrade(request, socket, head, (ws) => {
-      wss.emit('connection', ws, request);
-    });
-  } else {
-    socket.destroy();
-  }
-});
+  const handleMessage = (rawData: RawData) => {
+    clearTimeout(timerId);
 
-server.listen(PORT);
+    const command = rawData.toString().split(' ');
+
+    if (isCommandValid(command)) {
+      const [commandName] = command;
+      commandResolvers[commandName](ws, command);
+    } else {
+      handleClose('Unknown command', ws);
+    }
+  };
+
+  ws.once('message', handleMessage);
+};
+
+wss.on('connection', handleConnection);
