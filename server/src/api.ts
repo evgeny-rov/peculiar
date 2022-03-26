@@ -29,7 +29,7 @@ const commandResolvers: Record<
     const id = uuid();
     waitingRoom.set(id, ws);
     ws.on('close', () => cleanup(id));
-    ws.send(id);
+    ws.send(`created ${id}`);
   },
   connect: (ws, command) => {
     const [, id] = command;
