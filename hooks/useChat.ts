@@ -1,13 +1,8 @@
 import { NextRouter, useRouter } from 'next/router';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import createSessionSocket from '../helpers/createSessionSocket';
+import createSessionSocket from '../helpers/session';
 
-import type {
-  ReceivedMessage,
-  SendFunc,
-  ReceivedMessageType,
-  SessionSocket,
-} from '../helpers/createSessionSocket';
+import type { ClientAcceptedMessageType, ClientMessage, Session } from '../helpers/session';
 
 type ViewMessage = {
   own: boolean;
@@ -22,18 +17,17 @@ type RootState = {
   status: string;
 };
 
-type ActionTypes = ReceivedMessageType | 'sent' | 'close';
+type ActionTypes = ClientAcceptedMessageType | 'sent' | 'close';
 type Action = [ActionTypes, string];
 
 type ReducersTable = Record<ActionTypes, (state: RootState, action: Action) => RootState>;
 
 type SideEffectResolversParams = {
-  message: ReceivedMessage;
-  // socketRef: ReturnType<typeof createSessionSocket>;
+  message: ClientMessage;
   router: NextRouter;
 };
 type SideEffectResolversTable = Record<
-  ReceivedMessageType,
+  ClientAcceptedMessageType,
   (params: SideEffectResolversParams) => void
 >;
 
@@ -44,7 +38,7 @@ const stateReducers: ReducersTable = {
   connected: (state) => {
     return { ...state, isConnected: true, status: 'your sidekick has joined the session' };
   },
-  plaintext: (state, action) => {
+  text: (state, action) => {
     return { ...state, messages: [...state.messages, { own: false, text: action[1] }] };
   },
   sent: (state, action) => {
@@ -53,6 +47,9 @@ const stateReducers: ReducersTable = {
   close: (state, action) => {
     return { ...state, isConnected: false, status: action[1] };
   },
+  established: (state, action) => {
+    return { ...state, isSecured: true };
+  },
 };
 
 const sideEffectsResolvers: SideEffectResolversTable = {
@@ -60,7 +57,8 @@ const sideEffectsResolvers: SideEffectResolversTable = {
     router.replace(sid, sid, { shallow: true });
   },
   connected: () => null,
-  plaintext: () => null,
+  text: () => null,
+  established: () => null,
 };
 
 const initialState: RootState = {
@@ -72,7 +70,7 @@ const initialState: RootState = {
 
 const useChat = (chid: string): [RootState, (text: string) => void] => {
   const router = useRouter();
-  const socketRef = useRef<SessionSocket>();
+  const sessionRef = useRef<Session>();
   const [state, setState] = useState<RootState>(initialState);
 
   const handleStateUpdate = useCallback((action: Action) => {
@@ -84,25 +82,25 @@ const useChat = (chid: string): [RootState, (text: string) => void] => {
     handleStateUpdate(['close', reason]);
   }, []);
 
-  const handleReceive = useCallback((respond: SendFunc, message: ReceivedMessage) => {
+  const handleReceive = useCallback((message: ClientMessage) => {
     sideEffectsResolvers[message[0]]({ message, router });
     handleStateUpdate(message);
   }, []);
 
   const send = useCallback((text: string) => {
-    if (!socketRef.current) return;
+    if (!sessionRef.current) return;
 
-    socketRef.current.send('plaintext', text);
+    sessionRef.current.send(text);
     handleStateUpdate(['sent', text]);
   }, []);
 
   useEffect(() => {
     createSessionSocket({ onMessage: handleReceive, onClose: handleClose }).then((socket) => {
-      socketRef.current = socket;
+      sessionRef.current = socket;
       chid === 'create' ? socket.createSession() : socket.connectToSession(chid);
     });
 
-    return () => socketRef.current?.close();
+    return () => sessionRef.current?.close();
   }, []);
 
   return [state, send];
