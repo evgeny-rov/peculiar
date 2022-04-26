@@ -1,6 +1,13 @@
-import { decrypt, deriveSecretKey, encrypt, exportKey, generateKeyPair, importKey } from './crypto';
-import fetchSocket from './fetchSocket';
+import {
+  decrypt,
+  deriveSecretKey,
+  encrypt,
+  exportKey,
+  generateKeyPair,
+  importKey,
+} from './crypto';
 import parseMessage from './parseMessage';
+import { fetchSocket, socketReceiveOnce } from './socket';
 
 export type ServerAcceptedMessageType = 'create' | 'connect';
 export type ServerResponseMessageType = 'created' | 'connected';
@@ -14,110 +21,109 @@ export type SessionSentMessageType = ServerAcceptedMessageType | 'encrypted' | '
 export type ReceivedMessage = [SessionMessageType, MessageData];
 export type ClientMessage = [ClientAcceptedMessageType, MessageData];
 
-export type SocketParams = {
-  onMessage: (message: ClientMessage) => any;
-  onClose: (reason: string) => any;
-};
-
 export type Session = {
-  createSession: () => void;
-  connectToSession: (sid: string) => void;
   send: (data: MessageData) => Promise<void>;
   close: () => void;
 };
 
-const validReceivedMessageTypes: SessionMessageType[] = [
-  'created',
-  'connected',
-  'encrypted',
-  'key',
-];
-
-const isDataValidMessage = (data: string[]): data is ReceivedMessage =>
-  (validReceivedMessageTypes as string[]).includes(data[0]);
-
-const createSecureSession = async ({ onMessage, onClose }: SocketParams): Promise<Session> => {
-  const SERVER_URL = 'ws://localhost:8080/';
-  const socket = await fetchSocket(SERVER_URL);
-  const keyPair = await generateKeyPair();
-  let sharedSecretKey: CryptoKey | null = null;
-
-  const handleClose = (ev: CloseEvent) => {
-    console.log('session received close:', ev.reason);
-    onClose(ev.reason);
-  };
-
-  const send = (type: SessionSentMessageType, data: MessageData) => {
-    console.log('session sending:', type, data);
-    socket.send(`${type} ${data}`);
-  };
-
-  const sendEncrypted = async (data: MessageData) => {
-    console.log('client sending plain:', data);
-    if (!sharedSecretKey) {
-      return;
-    }
-
-    const encrypted = await encrypt(data, sharedSecretKey);
-    send('encrypted', encrypted);
-    console.log('client sending encrypted:', encrypted);
-  };
-
-  const coordinate = async (data: string) => {
-    console.log('coordinator: received message data:', data);
-    const message = parseMessage(data);
-    const isMessageValid = isDataValidMessage(message);
-
-    if (!isMessageValid) {
-      socket.close(1000, 'session closed, received incorrect or unknown message');
-      return;
-    }
-
-    const [type] = message;
-
-    switch (type) {
-      case 'connected': {
-        const jwk = await exportKey(keyPair.publicKey);
-        send('key', JSON.stringify(jwk));
-        onMessage(['connected', '']);
-        break;
-      }
-      case 'key': {
-        const [, data] = message;
-        const jwkJson = JSON.parse(data);
-        const jwk = await importKey(jwkJson);
-        const derivedSecret = await deriveSecretKey(keyPair.privateKey, jwk);
-        sharedSecretKey = derivedSecret;
-        onMessage(['established', '']);
-        break;
-      }
-      case 'encrypted': {
-        console.log('encrypted block');
-        if (sharedSecretKey) {
-          const plaintext = await decrypt(message[1], sharedSecretKey);
-          console.log(plaintext);
-          onMessage(['text', plaintext]);
-        }
-        break;
-      }
-      default: {
-        onMessage(message as ClientMessage);
-        break;
-      }
-    }
-  };
-
-  const close = () => {
-    socket.close();
-  };
-
-  const createSession = () => send('create', '');
-  const connectToSession = (sid: string) => send('connect', sid);
-
-  socket.onmessage = (ev) => coordinate(ev.data);
-  socket.onclose = handleClose;
-
-  return { createSession, connectToSession, send: sendEncrypted, close };
+type SessionParams = {
+  onCreated: (sid: string) => any;
+  onEstablished: () => any;
+  onMessage: (plaintext: string, ciphertext: string) => any;
+  onClose: (reason: string) => any;
+  sid: string | null;
 };
 
-export default createSecureSession;
+const SERVER_URL = 'ws://localhost:8080/';
+
+const expectMessage = async (socket: WebSocket, expectedType: string, timeout?: number) => {
+  const response = await socketReceiveOnce(socket, timeout);
+  const message = parseMessage(response);
+  const [actualType] = message;
+
+  if (expectedType !== actualType) {
+    throw Error('Received unexpected message');
+  }
+
+  return message;
+};
+
+const sendPlain = (socket: WebSocket, type: SessionSentMessageType, data = '') => {
+  socket.send(`${type} ${data}`);
+};
+
+const sendEncrypted = async (socket: WebSocket, key: CryptoKey, data: MessageData) => {
+  const encrypted = await encrypt(data, key);
+  socket.send(`encrypted ${encrypted}`);
+};
+
+const exchangeKeys = async (socket: WebSocket, keyPair: CryptoKeyPair) => {
+  const myJwk = await exportKey(keyPair.publicKey);
+  const keyOffer = expectMessage(socket, 'key', 10000);
+
+  sendPlain(socket, 'key', JSON.stringify(myJwk));
+
+  const [, data] = await keyOffer;
+  const receivedJwkJson = JSON.parse(data);
+  const receivedJwk = await importKey(receivedJwkJson);
+  const sharedSecret = await deriveSecretKey(keyPair.privateKey, receivedJwk);
+
+  return sharedSecret;
+};
+
+const handleMessage = async (
+  data: string,
+  key: CryptoKey,
+  onSuccess: (plaintext: string, ciphertext: string) => any,
+  onAbort: (reason: string) => any
+) => {
+  const message = parseMessage(data);
+  const [type, ciphertext] = message;
+
+  if (type !== 'encrypted') onAbort('Received incorrect message');
+
+  try {
+    const plaintext = await decrypt(ciphertext, key);
+    onSuccess(plaintext, ciphertext);
+  } catch (e) {
+    if (e instanceof Error) {
+      onAbort(e.message);
+    }
+  }
+};
+
+export const establishSession = async ({
+  onCreated,
+  onEstablished,
+  onMessage,
+  onClose,
+  sid,
+}: SessionParams): Promise<Session> => {
+  const keyPair = await generateKeyPair();
+  const socket = await fetchSocket(SERVER_URL);
+
+  const isInitiator = sid === null;
+
+  console.log(sid);
+
+  if (isInitiator) {
+    sendPlain(socket, 'create');
+    const createdMessage = await expectMessage(socket, 'created', 10000);
+    onCreated(createdMessage[1]);
+  } else {
+    sendPlain(socket, 'connect', sid);
+  }
+
+  await expectMessage(socket, 'connected');
+  const sharedSecret = await exchangeKeys(socket, keyPair);
+
+  socket.onmessage = (ev) => handleMessage(ev.data, sharedSecret, onMessage, onClose);
+  socket.onclose = (ev) => onClose(ev.reason);
+  socket.onerror = () => onClose('Something went wrong');
+  onEstablished();
+
+  return {
+    send: (data: string) => sendEncrypted(socket, sharedSecret, data),
+    close: () => socket.close(),
+  };
+};

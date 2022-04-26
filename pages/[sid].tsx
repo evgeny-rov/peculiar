@@ -25,9 +25,12 @@ const Chat = ({ sid }: { sid: string }) => {
         return (
           <p
             key={idx}
-            style={{ color: msg.own ? 'black' : 'pink', textAlign: msg.own ? 'right' : 'left' }}
+            style={{
+              color: msg.own ? 'black' : 'pink',
+              textAlign: msg.own ? 'right' : 'left',
+            }}
           >
-            {msg.text}
+            {msg.plaintext}
           </p>
         );
       })}
@@ -38,7 +41,7 @@ const Chat = ({ sid }: { sid: string }) => {
         onChange={(e) => setMessageText(e.target.value)}
         value={messageText}
       />
-      <button disabled={!state.isConnected} onClick={handleSend}>
+      <button disabled={!state.isEstablished} onClick={handleSend}>
         send
       </button>
     </div>

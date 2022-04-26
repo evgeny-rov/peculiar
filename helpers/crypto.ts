@@ -85,11 +85,11 @@ export const encrypt = async (plaintext: string, key: CryptoKey): Promise<string
   const ivAsBase64 = arrayBufferToBase64(iv.buffer);
   const ciphertextAsBase64 = arrayBufferToBase64(encrypted);
 
-  return `${ivAsBase64} ${ciphertextAsBase64}`;
+  return `${ciphertextAsBase64} ${ivAsBase64}`;
 };
 
 export const decrypt = async (cipher: string, key: CryptoKey): Promise<string> => {
-  const [ivAsBase64, ciphertextAsBase64] = cipher.split(' ');
+  const [ciphertextAsBase64, ivAsBase64] = cipher.split(' ');
 
   const iv = new Uint8Array(base64ToArrayBuffer(ivAsBase64));
   const ciphertext = base64ToArrayBuffer(ciphertextAsBase64);
