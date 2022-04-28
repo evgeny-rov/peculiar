@@ -14,12 +14,14 @@ type ViewMessage = {
 type RootState = {
   messages: ViewMessage[];
   isEstablished: boolean;
+  sessionFingerprint: string;
   status: string;
 };
 
 const initialState: RootState = {
   messages: [],
   isEstablished: false,
+  sessionFingerprint: '',
   status: 'pending',
 };
 
@@ -33,10 +35,12 @@ const useChat = (sid: string): [RootState, (text: string) => void] => {
     setState((state) => ({ ...state, status: 'session created, you can now send your link' }));
   }, []);
 
-  const handleEstablished = useCallback(() => {
+  const handleEstablished = useCallback((fingerprint: string) => {
+    console.log(fingerprint);
     setState((state) => ({
       ...state,
       isEstablished: true,
+      sessionFingerprint: fingerprint,
       status: 'session established, messages encrypted',
     }));
   }, []);

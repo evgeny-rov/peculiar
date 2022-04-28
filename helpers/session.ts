@@ -4,6 +4,7 @@ import {
   encrypt,
   exportKey,
   generateKeyPair,
+  getKeyFingerprint,
   importKey,
 } from './crypto';
 import parseMessage from './parseMessage';
@@ -12,14 +13,11 @@ import { fetchSocket, socketReceiveOnce } from './socket';
 export type ServerAcceptedMessageType = 'create' | 'connect';
 export type ServerResponseMessageType = 'created' | 'connected';
 
-export type ClientAcceptedMessageType = ServerResponseMessageType | 'established' | 'text';
 export type SessionMessageType = ServerResponseMessageType | 'encrypted' | 'key';
-
 export type MessageData = string;
 
 export type SessionSentMessageType = ServerAcceptedMessageType | 'encrypted' | 'key';
 export type ReceivedMessage = [SessionMessageType, MessageData];
-export type ClientMessage = [ClientAcceptedMessageType, MessageData];
 
 export type Session = {
   send: (data: MessageData) => Promise<void>;
@@ -27,10 +25,10 @@ export type Session = {
 };
 
 type SessionParams = {
-  onCreated: (sid: string) => any;
-  onEstablished: () => any;
-  onMessage: (plaintext: string, ciphertext: string) => any;
-  onClose: (reason: string) => any;
+  onCreated: (sid: string) => void;
+  onEstablished: (fingerprint: string) => void;
+  onMessage: (plaintext: string, ciphertext: string) => void;
+  onClose: (reason: string) => void;
   sid: string | null;
 };
 
@@ -104,8 +102,6 @@ export const establishSession = async ({
 
   const isInitiator = sid === null;
 
-  console.log(sid);
-
   if (isInitiator) {
     sendPlain(socket, 'create');
     const createdMessage = await expectMessage(socket, 'created', 10000);
@@ -116,11 +112,12 @@ export const establishSession = async ({
 
   await expectMessage(socket, 'connected');
   const sharedSecret = await exchangeKeys(socket, keyPair);
+  const secretFingerprint = await getKeyFingerprint(sharedSecret);
 
   socket.onmessage = (ev) => handleMessage(ev.data, sharedSecret, onMessage, onClose);
   socket.onclose = (ev) => onClose(ev.reason);
   socket.onerror = () => onClose('Something went wrong');
-  onEstablished();
+  onEstablished(secretFingerprint);
 
   return {
     send: (data: string) => sendEncrypted(socket, sharedSecret, data),
