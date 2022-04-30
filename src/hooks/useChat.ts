@@ -1,4 +1,3 @@
-import { useRouter } from 'next/router';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { establishSession } from '../helpers/session';
 
@@ -26,12 +25,10 @@ const initialState: RootState = {
 };
 
 const useChat = (sid: string): [RootState, (text: string) => void] => {
-  const router = useRouter();
   const sessionRef = useRef<Session>();
   const [state, setState] = useState<RootState>(initialState);
 
   const handleCreated = useCallback((sid: string) => {
-    router.replace(sid, sid, { shallow: true });
     setState((state) => ({ ...state, status: 'session created, you can now send your link' }));
   }, []);
 
