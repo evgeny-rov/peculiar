@@ -14,6 +14,12 @@ const arrayBufferToBase64 = (buffer: ArrayBuffer) => {
   return window.btoa(result.join(''));
 };
 
+const arrayBufferToHex = (buffer: ArrayBuffer, separator = '') => {
+  return new Uint8Array(buffer)
+    .reduce<string[]>((a, b) => [...a, b.toString(16).padStart(2, '0')], [])
+    .join(separator);
+};
+
 const base64ToArrayBuffer = (base64: string) => {
   const binary_string = window.atob(base64);
   const result = new Uint8Array(binary_string.length).map((_, idx) =>
@@ -46,7 +52,7 @@ export const deriveSecretKey = (privateKey: CryptoKey, publicKey: CryptoKey) => 
       name: 'AES-GCM',
       length: 256,
     },
-    false,
+    true,
     ['encrypt', 'decrypt']
   );
 };
@@ -68,6 +74,12 @@ export const importKey = (publicKey: JsonWebKey) => {
   );
 };
 
+export const getKeyFingerprint = async (key: CryptoKey) => {
+  const raw = await window.crypto.subtle.exportKey('raw', key);
+  const result = await window.crypto.subtle.digest('sha-1', raw);
+  return arrayBufferToHex(result, '');
+};
+
 export const encrypt = async (plaintext: string, key: CryptoKey): Promise<string> => {
   const encoded = encodeText(plaintext);
 
@@ -85,11 +97,11 @@ export const encrypt = async (plaintext: string, key: CryptoKey): Promise<string
   const ivAsBase64 = arrayBufferToBase64(iv.buffer);
   const ciphertextAsBase64 = arrayBufferToBase64(encrypted);
 
-  return `${ivAsBase64} ${ciphertextAsBase64}`;
+  return `${ciphertextAsBase64} ${ivAsBase64}`;
 };
 
 export const decrypt = async (cipher: string, key: CryptoKey): Promise<string> => {
-  const [ivAsBase64, ciphertextAsBase64] = cipher.split(' ');
+  const [ciphertextAsBase64, ivAsBase64] = cipher.split(' ');
 
   const iv = new Uint8Array(base64ToArrayBuffer(ivAsBase64));
   const ciphertext = base64ToArrayBuffer(ciphertextAsBase64);
