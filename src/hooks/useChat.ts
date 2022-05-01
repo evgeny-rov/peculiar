@@ -33,7 +33,6 @@ const useChat = (sid: string): [RootState, (text: string) => void] => {
   }, []);
 
   const handleEstablished = useCallback((fingerprint: string) => {
-    console.log(fingerprint);
     setState((state) => ({
       ...state,
       isEstablished: true,
