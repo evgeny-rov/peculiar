@@ -24,12 +24,13 @@ const initialState: RootState = {
   status: 'pending',
 };
 
-const useChat = (sid: string): [RootState, (text: string) => void] => {
+const useChat = (sid: string | null = null): [RootState, (text: string) => void] => {
   const sessionRef = useRef<Session>();
   const [state, setState] = useState<RootState>(initialState);
 
   const handleCreated = useCallback((sid: string) => {
-    setState((state) => ({ ...state, status: 'session created, you can now send your link' }));
+    const chatUrl = window.location.href + sid;
+    setState((state) => ({ ...state, status: 'session created, send this link: ' + chatUrl }));
   }, []);
 
   const handleEstablished = useCallback((fingerprint: string) => {
@@ -42,6 +43,7 @@ const useChat = (sid: string): [RootState, (text: string) => void] => {
   }, []);
 
   const handleClose = useCallback((reason: string) => {
+    console.log('closed');
     setState((state) => ({ ...state, isEstablished: false, status: reason }));
   }, []);
 
@@ -68,10 +70,14 @@ const useChat = (sid: string): [RootState, (text: string) => void] => {
       onEstablished: handleEstablished,
       onMessage: handleMessage,
       onClose: handleClose,
-      sid: sid === 'create' ? null : sid,
-    }).then((session) => {
-      sessionRef.current = session;
-    });
+      sid,
+    })
+      .then((session) => {
+        sessionRef.current = session;
+      })
+      .catch((e) => {
+        handleClose('Error while establishing session');
+      });
 
     return () => sessionRef.current?.close();
   }, []);
