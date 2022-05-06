@@ -7,7 +7,6 @@ import {
   getKeyFingerprint,
   importKey,
 } from './crypto';
-import parseMessage from './parseMessage';
 import { AppWebSocket, fetchSocket, IncomingMessage } from './socket';
 
 type SessionParams = {
@@ -19,7 +18,6 @@ type SessionParams = {
 };
 
 export type MessageData = string;
-
 export type Session = {
   send: (data: MessageData) => Promise<void>;
   close: () => void;
@@ -36,21 +34,13 @@ const createSecret = async (privateKey: CryptoKey, receivedKeyOffer: IncomingMes
   return sharedSecret;
 };
 
-const sendEncrypted = async (socket: AppWebSocket, key: CryptoKey, data: MessageData) => {
-  const encrypted = await encrypt(data, key);
-  socket.send('encrypted', encrypted);
-};
-
-const handleMessage = async (
-  data: string,
+const handleEncryptedMessage = async (
+  message: IncomingMessage,
   key: CryptoKey,
   onSuccess: (plaintext: string, ciphertext: string) => any,
   onAbort: (reason: string) => any
 ) => {
-  const message = parseMessage(data);
-  const [type, ciphertext] = message;
-
-  if (type !== 'encrypted') onAbort('Received incorrect message');
+  const [, ciphertext] = message;
 
   try {
     const plaintext = await decrypt(ciphertext, key);
@@ -60,6 +50,11 @@ const handleMessage = async (
       onAbort(e.message);
     }
   }
+};
+
+const sendEncrypted = async (socket: AppWebSocket, key: CryptoKey, data: MessageData) => {
+  const encrypted = await encrypt(data, key);
+  socket.send('encrypted', encrypted);
 };
 
 export const establishSession = async ({
@@ -74,7 +69,7 @@ export const establishSession = async ({
   const socket = await fetchSocket(SERVER_URL);
 
   socket.onclose = (ev: any) => onClose(ev.reason);
-  socket.onerror = () => onClose('Something went wrong');
+  socket.onerror = () => onClose('Something went horribly wrong');
 
   const isInitiator = sid === null;
 
@@ -96,7 +91,9 @@ export const establishSession = async ({
   const sharedSecret = await createSecret(keyPair.privateKey, keyOffer);
   const secretFingerprint = await getKeyFingerprint(sharedSecret);
 
-  socket.receiveDirectly((data) => handleMessage(data, sharedSecret, onMessage, onClose));
+  socket.listen('encrypted', (message) =>
+    handleEncryptedMessage(message, sharedSecret, onMessage, onClose)
+  );
   onEstablished(secretFingerprint);
 
   return {

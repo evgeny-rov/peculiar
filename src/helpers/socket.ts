@@ -1,83 +1,64 @@
+import defer, { DeferredRequest } from './defer';
 import parseMessage from './parseMessage';
+import createTimeoutPromise from './timeoutPromise';
 
 type SentMessageType = 'create' | 'connect' | 'key' | 'encrypted';
 type ReceivedMessageType = 'created' | 'connected' | 'key' | 'encrypted';
 export type IncomingMessage = [ReceivedMessageType, string];
 
-const acceptedMessageTypes = ['created', 'connected', 'key', 'encrypted'] as ReceivedMessageType[];
-
-type DeferredRequest = {
-  promise: Promise<any>;
-  resolve: (data: any) => void;
-  reject: () => void;
-};
+type ListenerCallback = (message: IncomingMessage) => void;
 
 type OrderListEntry = DeferredRequest & {
   type: ReceivedMessageType;
 };
 
-const defer = (): DeferredRequest => {
-  const deferred = {} as DeferredRequest;
+const allowedMessages = ['created', 'connected', 'key', 'encrypted'] as ReceivedMessageType[];
 
-  deferred.promise = new Promise((resolve, reject) => {
-    deferred.resolve = resolve;
-    deferred.reject = reject;
-  });
-
-  return deferred;
-};
-
-const createTimeoutPromise = (ms: number) => new Promise((_, rej) => setTimeout(rej, ms));
 export class AppWebSocket extends WebSocket {
   private orderList: OrderListEntry[];
-  private isServing: boolean;
+  private listeners: Array<[ReceivedMessageType, ListenerCallback]>;
 
   constructor(url: string) {
     super(url);
     this.orderList = [];
-    this.isServing = false;
+    this.listeners = [];
+    super.addEventListener('message', this.handleMessage);
   }
 
-  private startServing() {
-    if (this.isServing) return;
-
-    super.addEventListener('message', this.handleOrderMessage);
-    this.isServing = true;
-  }
-
-  private stopServing() {
-    super.removeEventListener('message', this.handleOrderMessage);
-    this.isServing = false;
+  private abandonOrders(reason: string) {
+    this.orderList.forEach(({ reject }) => reject(Error(reason)));
+    this.orderList = [];
   }
 
   private terminate(reason: string) {
-    this.stopServing();
-    this.orderList.forEach(({ reject }) => reject());
-    this.orderList = [];
+    this.abandonOrders(reason);
     super.close(1000, reason);
   }
 
   private checkOrders(message: IncomingMessage) {
     const nextOrder = this.orderList[0];
     const doesFulfillOrder = nextOrder !== undefined && nextOrder.type === message[0];
-    const isLastOrder = this.orderList.length === 1;
 
     if (doesFulfillOrder) {
       nextOrder.resolve(message);
       this.orderList.shift();
-      isLastOrder && this.stopServing();
     } else {
-      console.log(nextOrder, message);
-      this.terminate('Received non-requested message');
+      this.abandonOrders('Received non-requested message');
     }
   }
 
-  private handleOrderMessage(ev: MessageEvent) {
+  private checkListeners(message: IncomingMessage) {
+    const appropiateListeners = this.listeners.filter(([type]) => type === message[0]);
+    appropiateListeners.forEach(([, cb]) => cb(message));
+  }
+
+  private handleMessage(ev: MessageEvent) {
     const message = parseMessage(ev.data);
-    const isValidMessageType = (acceptedMessageTypes as string[]).includes(message[0]);
+    const isValidMessageType = (allowedMessages as string[]).includes(message[0]);
 
     if (isValidMessageType) {
       this.checkOrders(message as IncomingMessage);
+      this.checkListeners(message as IncomingMessage);
     } else {
       this.terminate('Received invalid message');
     }
@@ -85,6 +66,10 @@ export class AppWebSocket extends WebSocket {
 
   send(type: SentMessageType, data = '') {
     super.send(`${type} ${data}`);
+  }
+
+  listen(type: ReceivedMessageType, cb: ListenerCallback) {
+    this.listeners.push([type, cb]);
   }
 
   putOrder(...orderedMessages: ReceivedMessageType[]) {
@@ -102,14 +87,7 @@ export class AppWebSocket extends WebSocket {
     );
 
     this.orderList.push(...orders);
-    this.startServing();
-
     return waiters;
-  }
-
-  receiveDirectly(callback: (data: string) => void) {
-    this.stopServing();
-    super.addEventListener('message', (ev) => callback(ev.data));
   }
 }
 
@@ -119,12 +97,11 @@ export const fetchSocket = (url: string) =>
 
     if (socket.readyState === socket.OPEN) {
       res(socket);
-      return;
+    } else {
+      socket.onopen = () => {
+        res(socket);
+      };
+
+      socket.onerror = () => rej(new Error("Couldn't connect to the server"));
     }
-
-    socket.onopen = () => {
-      res(socket);
-    };
-
-    socket.onerror = () => rej(new Error("Couldn't connect to the server"));
   });
