@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { establishSession } from '../helpers/session';
-
-import type { Session } from '../helpers/session';
+import { establishSession } from '../core/session';
+import type { Session } from '../core/session';
 
 type ViewMessage = {
   own: boolean;
@@ -10,43 +9,47 @@ type ViewMessage = {
   timestamp?: number;
 };
 
-type RootState = {
-  messages: ViewMessage[];
+export type RootState = {
   isEstablished: boolean;
-  sessionFingerprint: string;
-  status: string;
+  isClosed: boolean;
+  info: string;
+  sessionFingerprint: string | null;
+  sessionId: string | null;
+  messages: ViewMessage[];
 };
 
-const initialState: RootState = {
+const createInitialState = (): RootState => ({
   messages: [],
   isEstablished: false,
-  sessionFingerprint: '',
-  status: 'Establishing session...',
-};
+  isClosed: false,
+  sessionFingerprint: null,
+  sessionId: null,
+  info: 'Establishing session...',
+});
 
 const useChat = (sid: string | null = null): [RootState, (text: string) => void] => {
   const sessionRef = useRef<Session>();
-  const [state, setState] = useState<RootState>(initialState);
+  const [state, setState] = useState<RootState>(createInitialState());
 
-  const handleCreated = useCallback((sid: string) => {
-    const chatUrl = window.location.href + sid;
+  const handleCreated = (sid: string) => {
     setState((state) => ({
       ...state,
-      status: 'Session created, you can send this link: ' + chatUrl,
+      sessionId: sid,
+      info: 'Session created, you can now share session url',
     }));
-  }, []);
+  };
 
   const handleEstablished = useCallback((fingerprint: string) => {
     setState((state) => ({
       ...state,
       isEstablished: true,
       sessionFingerprint: fingerprint,
-      status: 'Session established, messages encrypted',
+      info: 'Session established, messages encrypted',
     }));
   }, []);
 
   const handleClose = useCallback((reason: string) => {
-    setState((state) => ({ ...state, isEstablished: false, status: reason }));
+    setState((state) => ({ ...state, isClosed: true, info: reason }));
   }, []);
 
   const handleMessage = useCallback((plaintext: string, ciphertext: string) => {
@@ -78,10 +81,8 @@ const useChat = (sid: string | null = null): [RootState, (text: string) => void]
         sessionRef.current = session;
       })
       .catch((e) => {
-        console.log(e);
-        handleClose(e.toString());
+        handleClose(e.message);
       });
-
     return () => sessionRef.current?.close();
   }, []);
 

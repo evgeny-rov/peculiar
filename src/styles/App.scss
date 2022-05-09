@@ -1,28 +1,78 @@
-.App {
-  height: 100vh;
-  width: 100%;
-  display: grid;
-  place-items: center;
-  text-align: center;
+@keyframes pulse {
+  from { opacity: 0.2; }
+  to { opacity: 1; }
 }
 
-.start-action {
-  font-size: 1rem;
+.App {
+  position: fixed;
+  height: 100%;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.txt-btn {
   background: none;
   border: none;
-  color: white;
   cursor: pointer;
-  display: flex;
-  gap: 0.3rem;
-  animation: pulse 1.5s ease-in-out none infinite alternate;
+  color: white;
+
+  &_type_pulse {
+    animation: pulse 1.5s ease-in-out none infinite alternate;
+  }
 }
 
 .caret {
   color: white;
   opacity: 0.2;
+  margin: 0 0.5rem;
 }
 
-@keyframes pulse {
-  from { opacity: 0.2; }
-  to { opacity: 1; }
+.status-info {
+  user-select: none;
+  opacity: 0.5;
+}
+
+.chatbox {
+  padding: 1rem;
+  width: 600px;
+  height: 800px;
+  border-radius: 1rem;
+  background: rgb(27, 27, 27);
+  display: grid;
+  grid-template-rows: 2rem 1fr 2rem;
+}
+
+.chatbox__status {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.user-input {
+  display: grid;
+  align-items: center;
+  grid-template-columns: 90% 1fr;
+}
+
+.chatbox__messages {
+  display: flex;
+  flex-direction: column;
+  align-self: flex-end;
+  gap: 1rem;
+  overflow-y: scroll;
+  height: 100%;
+}
+
+.chatbox__message {
+  background-color: rgb(44, 44, 44);
+  padding: 0.8rem;
+  border-radius: 0.5rem;
+  width: fit-content;
+
+  &--type-own {
+    align-self: flex-end;
+  }
 }

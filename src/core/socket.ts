@@ -1,6 +1,6 @@
-import defer, { DeferredRequest } from './defer';
-import parseMessage from './parseMessage';
-import createTimeoutPromise from './timeoutPromise';
+import defer, { DeferredRequest } from '../helpers/defer';
+import parseMessage from '../helpers/parseMessage';
+import createPromiseWithTimeout from '../helpers/promiseWithTimeout';
 
 type SentMessageType = 'create' | 'connect' | 'key' | 'encrypted';
 type ReceivedMessageType = 'created' | 'connected' | 'key' | 'encrypted';
@@ -12,8 +12,9 @@ type OrderListEntry = DeferredRequest & {
   type: ReceivedMessageType;
 };
 
-const allowedMessages = ['created', 'connected', 'key', 'encrypted'] as ReceivedMessageType[];
+export class SocketError extends Error {}
 
+const allowedMessages = ['created', 'connected', 'key', 'encrypted'] as ReceivedMessageType[];
 export class AppWebSocket extends WebSocket {
   private orderList: OrderListEntry[];
   private listeners: Array<[ReceivedMessageType, ListenerCallback]>;
@@ -26,7 +27,7 @@ export class AppWebSocket extends WebSocket {
   }
 
   private abandonOrders(reason: string) {
-    this.orderList.forEach(({ reject }) => reject(Error(reason)));
+    this.orderList.forEach(({ reject }) => reject(new SocketError(reason)));
     this.orderList = [];
   }
 
@@ -82,8 +83,8 @@ export class AppWebSocket extends WebSocket {
 
     const waiters = orders.map(
       ({ promise }) =>
-        (timeout?: number) =>
-          timeout ? Promise.race([promise, createTimeoutPromise(timeout)]) : promise
+        (timeoutAfter?: number) =>
+          timeoutAfter ? createPromiseWithTimeout(promise, 'No response', timeoutAfter) : promise
     );
 
     this.orderList.push(...orders);
@@ -102,6 +103,6 @@ export const fetchSocket = (url: string) =>
         res(socket);
       };
 
-      socket.onerror = () => rej(new Error("Couldn't connect to the server"));
+      socket.onerror = () => rej(new SocketError("Couldn't connect to the server"));
     }
   });
