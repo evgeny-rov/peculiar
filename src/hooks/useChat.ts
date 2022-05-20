@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { establishSession } from '../core/session';
 import type { Session } from '../core/session';
 
-type ViewMessage = {
+export type ViewMessage = {
   own: boolean;
   plaintext: string;
   ciphertext?: string;
