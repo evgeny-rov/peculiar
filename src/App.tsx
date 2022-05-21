@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import ChatSession from './components/ChatSession';
 import Welcome from './components/Welcome';
+import ChatSession from './components/ChatSession';
 import getSessionIdFromPathname from './helpers/getSessionIdFromPathname';
 import './styles/App.scss';
 

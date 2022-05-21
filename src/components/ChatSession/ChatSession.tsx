@@ -1,12 +1,12 @@
 import React from 'react';
-import useChat from '../hooks/useChat';
+import useSecureChatSession from '../../hooks/useSecureChatSession';
 import ChatFeed from './ChatFeed';
 import ChatInput from './ChatInput';
 import ChatStatus from './ChatStatus';
-import ConnectionProgress from './ConnectionProgress';
+import ConnectionProgress from './ChatLoading';
 
 const ChatSession = ({ sid }: { sid: string | null }) => {
-  const [chatState, send] = useChat(sid);
+  const [chatState, send] = useSecureChatSession(sid);
 
   if (!chatState.isEstablished) {
     return <ConnectionProgress info={chatState.info} sessionId={chatState.sessionId} />;

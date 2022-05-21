@@ -1,5 +1,5 @@
 import { RefObject, useRef, useLayoutEffect, useEffect } from 'react';
-import { ViewMessage } from './useChat';
+import type { ViewMessage } from './useSecureChatSession';
 
 const useAdjustScroll = <T extends Element>(
   messages: ViewMessage[],

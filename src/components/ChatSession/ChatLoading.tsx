@@ -1,7 +1,4 @@
-const ConnectionProgress = ({ info, sessionId }: { info: string; sessionId: string | null }) => {
-  console.log(window.location);
-  console.log(sessionId);
-
+const ChatLoading = ({ info, sessionId }: { info: string; sessionId: string | null }) => {
   return (
     <>
       <div>
@@ -13,4 +10,4 @@ const ConnectionProgress = ({ info, sessionId }: { info: string; sessionId: stri
   );
 };
 
-export default ConnectionProgress;
+export default ChatLoading;
