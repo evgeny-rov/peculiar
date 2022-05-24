@@ -5,12 +5,9 @@ import type { ViewMessage } from '../../hooks/useSecureChatSession';
 
 const MessagesList = ({ messages }: { messages: ViewMessage[] }) => {
   return (
-    <ul className="chat__messages-list">
+    <ul className="messages-list">
       {messages.map((msg, idx) => (
-        <li
-          key={idx}
-          className={msg.own ? 'chat__message chat__message_type_distinct' : 'chat__message'}
-        >
+        <li key={idx} className={msg.own ? 'message message_type_distinct' : 'message'}>
           {msg.plaintext}
         </li>
       ))}
@@ -26,7 +23,7 @@ const ChatFeed = ({ messages }: { messages: ViewMessage[] }) => {
       <div className="scroll-trap scroll-trap_at_top" aria-hidden ref={topRef} />
       <MessagesList messages={messages} />
       <button
-        className={`scroll-suggest ${!isBtmReached ? 'scroll-suggest_visible' : ''}`}
+        className={`btn-scroll-down ${!isBtmReached ? 'btn-scroll-down_visible' : ''}`}
         onClick={() => adjustScroll()}
       >
         v

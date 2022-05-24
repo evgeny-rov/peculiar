@@ -3,13 +3,13 @@ import useSecureChatSession from '../../hooks/useSecureChatSession';
 import ChatFeed from './ChatFeed';
 import ChatInput from './ChatInput';
 import ChatStatus from './ChatStatus';
-import ConnectionProgress from './ChatLoading';
+import ChatLoading from './ChatLoading';
 
 const ChatSession = ({ sid }: { sid: string | null }) => {
   const [chatState, send] = useSecureChatSession(sid);
 
   if (!chatState.isEstablished) {
-    return <ConnectionProgress info={chatState.info} sessionId={chatState.sessionId} />;
+    return <ChatLoading info={chatState.info} sessionId={chatState.sessionId} />;
   }
 
   return (

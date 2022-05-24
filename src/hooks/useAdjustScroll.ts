@@ -34,7 +34,7 @@ const useAdjustScroll = <T extends Element>(
   }, [strict]);
 
   useEffect(() => {
-    const isLastMessageOwn = messages[messages.length - 1].own;
+    const isLastMessageOwn = messages[messages.length - 1]?.own;
     const isInStrictMode = strictModeRef.current;
 
     if (isInStrictMode && !isLastMessageOwn) return;
