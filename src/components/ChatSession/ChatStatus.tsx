@@ -1,8 +1,23 @@
-const ChatStatus = ({ info }: { info: string }) => {
+const ChatStatus = ({
+  info,
+  isClosed,
+  fingerprint,
+}: {
+  info: string;
+  isClosed: boolean;
+  fingerprint: string | null;
+}) => {
   return (
-    <div className="chat__status">
-      <span className="txt-system txt-system_size_sm">{info}</span>
-    </div>
+    <header className="chat__status">
+      <div className="chat__status-info">
+        <span className={`status-light${isClosed ? ' status-light_inactive' : ''}`} />
+        <span className="txt-system txt-system_size_sm">{info}</span>
+      </div>
+
+      {!isClosed && fingerprint && (
+        <span className="txt-system txt-system_size_sm">SF: {fingerprint}</span>
+      )}
+    </header>
   );
 };
 

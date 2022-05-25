@@ -7,7 +7,7 @@ const MessagesList = ({ messages }: { messages: ViewMessage[] }) => {
   return (
     <ul className="messages-list">
       {messages.map((msg, idx) => (
-        <li key={idx} className={msg.own ? 'message message_type_distinct' : 'message'}>
+        <li key={msg.ciphertext} className={msg.own ? 'message message_type_distinct' : 'message'}>
           {msg.plaintext}
         </li>
       ))}
@@ -18,8 +18,16 @@ const ChatFeed = ({ messages }: { messages: ViewMessage[] }) => {
   const [topRef, btmRef, isTopReached, isBtmReached] = useVerticalBounds<HTMLDivElement>();
   const [feedRef, adjustScroll] = useAdjustScroll<HTMLDivElement>(messages, !isBtmReached);
 
+  if (messages.length === 0) {
+    return (
+      <main className="placeholder">
+        <span className="txt-system txt-system_dimmed">No messages, write something...</span>
+      </main>
+    );
+  }
+
   return (
-    <div className="chat__feed" ref={feedRef}>
+    <main className="chat__feed" ref={feedRef}>
       <div className="scroll-trap scroll-trap_at_top" aria-hidden ref={topRef} />
       <MessagesList messages={messages} />
       <button
@@ -29,7 +37,7 @@ const ChatFeed = ({ messages }: { messages: ViewMessage[] }) => {
         v
       </button>
       <div className="scroll-trap scroll-trap_at_btm" aria-hidden ref={btmRef} />
-    </div>
+    </main>
   );
 };
 

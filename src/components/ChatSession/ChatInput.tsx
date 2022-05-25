@@ -29,7 +29,7 @@ const ChatInput = ({ send }: { send: (text: string) => void }) => {
   };
 
   return (
-    <div className="chat__input">
+    <footer className="chat__input">
       <textarea
         value={text}
         ref={areaRef}
@@ -43,7 +43,7 @@ const ChatInput = ({ send }: { send: (text: string) => void }) => {
       <button name="send" className="chat__input-btn" onClick={handleSend}>
         {'>'}
       </button>
-    </div>
+    </footer>
   );
 };
 

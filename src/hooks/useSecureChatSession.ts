@@ -44,7 +44,7 @@ const useChat = (sid: string | null = null): [RootState, (text: string) => void]
       ...state,
       isEstablished: true,
       sessionFingerprint: fingerprint,
-      info: 'Session established, messages encrypted',
+      info: 'Messages encrypted',
     }));
   }, []);
 

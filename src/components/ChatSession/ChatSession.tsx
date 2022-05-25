@@ -14,7 +14,11 @@ const ChatSession = ({ sid }: { sid: string | null }) => {
 
   return (
     <div className="chat">
-      <ChatStatus info={chatState.info} />
+      <ChatStatus
+        info={chatState.info}
+        fingerprint={chatState.sessionFingerprint}
+        isClosed={chatState.isClosed}
+      />
       <ChatFeed messages={chatState.messages} />
       <ChatInput send={send} />
     </div>

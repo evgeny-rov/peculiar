@@ -1,10 +1,15 @@
 :root {
   color-scheme: dark;
 
-  --border-slim-gray: 1px solid #2b2b2b;
+  --border-slim: 1px solid;
   --text-color-primary: white;
   --font-size-system: 0.8rem;
-  --chat-padding: 0.8rem;
+  --chat-padding: 1.3rem;
+  --radius: 0.5rem;
+
+  --color-gray-light: #2b2b2b;
+  --color-gray: #252525;
+  --color-gray-darker: #141414;
 }
 
 .app {
@@ -33,6 +38,7 @@
 .txt-system {
   color: var(--text-color-primary);
   font-size: var(--font-size-system);
+  opacity: 0.5;
 
   &_nonselectible {
     user-select: none;
@@ -40,6 +46,10 @@
 
   &_size_sm {
     font-size: 0.7rem;
+  }
+
+  &_dimmed {
+    opacity: 0.1;
   }
 }
 
@@ -68,7 +78,6 @@
 }
 
 .btn-scroll-down {
-  flex-shrink: 0;
   position: sticky;
   bottom: 1rem;
   right: 1rem;
@@ -77,14 +86,14 @@
   margin: -2rem;
   border-radius: 50%;
   font-size: 0.7rem;
-  align-self: end;
+  float: right;
 
   opacity: 0;
   visibility: hidden;
   background:rgb(15, 15, 15);
   color: var(--text-color-primary);
-  border: var(--border-slim-gray);
-  transition: all 0.3s;
+  border: var(--border-slim) var(--color-gray-light);
+  transition: all 0.3s 0.2s;
 
   &:hover {
     transform: scale(1.1);
@@ -100,16 +109,33 @@
   }
 }
 
+.placeholder {
+  display: grid;
+  place-items: center;
+}
+
+.status-light {
+  height: 0.5rem;
+  width: 0.5rem;
+  border-radius: 50%;
+
+  background-color: greenyellow;
+  
+  &_inactive {
+    background-color: red;
+  }
+}
+
 .chat {
   position: relative;
   width: 500px;
   height: 650px;
-  border: var(--border-slim-gray);
-  border-radius: 0.5rem;
+  background-color: #080808;
+  border-radius: var(--radius);
   display: grid;
   grid-template-rows: auto 1fr auto;
   overflow: hidden;
-  box-shadow: 0 0 10px 10px #000000, inset 0 0 8px 1px #2b2b2b;
+  box-shadow: 0 0 10px 10px #020202;
 
   @media screen and (max-width: 30rem) {
     width: 100%;
@@ -118,23 +144,29 @@
   }
 
   &__status {
-    height: 1.5rem;
+    height: 2rem;
     padding: 0 var(--chat-padding);
-    border-bottom: var(--border-slim-gray);
+    background: var(--color-gray-darker);
+    border-radius: var(--radius);
     display: grid;
+    gap: 0.5rem;
+    grid-auto-flow: column;
     align-items: center;
+    justify-content: space-between;
+  }
+
+  &__status-info {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
   }
 
   &__feed {
     position: relative;
     overflow-x: hidden;
-    overflow-y: scroll;
+    overflow-y: auto;
     
-    padding: 0 var(--chat-padding);
-
-    display: flex;
-    flex-direction: column;
-
+    padding: var(--chat-padding);
 
     &::-webkit-scrollbar {
       display: none;
@@ -145,27 +177,29 @@
     display: grid;
     overflow: hidden;
     grid-template-columns: 1fr auto;
-    border-top: var(--border-slim-gray);
+    gap: 0.1rem;
+    
   }
   
   &__input-text {
     height: 2rem;
+    max-height: 5rem;
     padding: 0.5rem var(--chat-padding);
-    background: none;
+    background: var(--color-gray-darker);
     border: none;
-    border-radius: 0.5rem;
+    border-radius: var(--radius);
     color: var(--text-color-primary);
     resize: none;
     white-space: pre-line;
   }
   
   &__input-btn {
-    align-self: end;
+    align-self: flex-end;
     height: min(2rem, 100%);
-    width: 1.5rem;
+    width: var(--chat-padding);
     border: none;
-    background: rgb(43, 43, 43);
-    border-radius: 20% 0 0 20%;
+    background: var(--color-gray-light);
+    border-radius: var(--radius) 0 0 var(--radius);
     font-size: 0.7rem;
     padding: 0 0.5rem;
     color: var(--text-color-primary);
@@ -177,11 +211,13 @@
 }
 
 .messages-list {
-  padding: var(--chat-padding) 0;
+  min-height: 100%;
+  padding: 0;
   margin: 0;
   list-style: none;
   display: flex;
   flex-flow: column;
+  justify-content: flex-end;
   gap: 0.8rem;
 }
 
@@ -189,15 +225,16 @@
   padding: 0.5rem;
   width: fit-content;
   max-width: 80%;
-  border-radius: 0.5rem;
-  border: var(--border-slim-gray);
+  border-radius: var(--radius);
+  border: var(--border-slim) var(--color-gray-light);
   word-break: break-word;
   white-space: pre-wrap;
   font-size: 0.8rem;
+  background: var(--color-gray-darker);
 
   &_type_distinct {
     align-self: end;
-    background: rgb(37, 37, 37);
+    background: var(--color-gray);
   }
 }
 

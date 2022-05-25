@@ -16,7 +16,6 @@ const useVerticalBounds = <T extends Element>(
         if (entry.target.isSameNode(topRef.current)) {
           setIsTopReached(entry.isIntersecting);
         } else if (entry.target.isSameNode(btmRef.current)) {
-          console.log('het btm');
           setisBtmReached(entry.isIntersecting);
         } else {
           return;
@@ -35,7 +34,7 @@ const useVerticalBounds = <T extends Element>(
     observer.observe(btmElement);
 
     return () => observer.disconnect();
-  }, [topRef, btmRef]);
+  });
 
   return [topRef, btmRef, isTopReached, isBtmReached];
 };
