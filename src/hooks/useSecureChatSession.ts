@@ -1,11 +1,13 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { v4 as uuidv4 } from 'uuid';
 import { establishSession } from '../core/session';
 import type { Session } from '../core/session';
 
 export type ViewMessage = {
+  id: string;
   own: boolean;
   plaintext: string;
-  ciphertext?: string;
+  fingerprint?: string;
   timestamp?: number;
 };
 
@@ -52,10 +54,10 @@ const useChat = (sid: string | null = null): [RootState, (text: string) => void]
     setState((state) => ({ ...state, isClosed: true, info: reason }));
   }, []);
 
-  const handleMessage = useCallback((plaintext: string, ciphertext: string) => {
+  const handleMessage = useCallback((plaintext: string, fingerprint: string) => {
     setState((state) => ({
       ...state,
-      messages: [...state.messages, { own: false, plaintext, ciphertext }],
+      messages: [...state.messages, { id: uuidv4(), own: false, plaintext, fingerprint }],
     }));
   }, []);
 
@@ -65,7 +67,7 @@ const useChat = (sid: string | null = null): [RootState, (text: string) => void]
     sessionRef.current.send(text);
     setState((state) => ({
       ...state,
-      messages: [...state.messages, { own: true, plaintext: text }],
+      messages: [...state.messages, { id: uuidv4(), own: true, plaintext: text }],
     }));
   }, []);
 

@@ -36,14 +36,14 @@ const createSecret = async (privateKey: CryptoKey, receivedKeyOffer: IncomingMes
 const handleEncryptedMessage = async (
   message: IncomingMessage,
   key: CryptoKey,
-  onSuccess: (plaintext: string, ciphertext: string) => any,
+  onSuccess: (plaintext: string, fingerprint: string) => any,
   onError: (reason: string) => any
 ) => {
   const [, ciphertext] = message;
 
   try {
-    const plaintext = await decrypt(ciphertext, key);
-    onSuccess(plaintext, ciphertext);
+    const [plaintext, ciphertextFingerprint] = await decrypt(ciphertext, key);
+    onSuccess(plaintext, ciphertextFingerprint);
   } catch (e) {
     onError('Received incorrectly encrypted message');
   }

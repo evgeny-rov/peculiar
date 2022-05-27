@@ -4,12 +4,13 @@
   --border-slim: 1px solid;
   --text-color-primary: white;
   --font-size-system: 0.8rem;
-  --chat-padding: 1.3rem;
-  --radius: 0.5rem;
+  --chat-padding: 1rem;
+  --radius: 0.4rem;
 
   --color-gray-light: #2b2b2b;
   --color-gray: #252525;
   --color-gray-darker: #141414;
+  --color-gray-darkest:#0e0e0e;
 }
 
 .app {
@@ -38,7 +39,6 @@
 .txt-system {
   color: var(--text-color-primary);
   font-size: var(--font-size-system);
-  opacity: 0.5;
 
   &_nonselectible {
     user-select: none;
@@ -49,7 +49,7 @@
   }
 
   &_dimmed {
-    opacity: 0.1;
+    opacity: 0.3;
   }
 }
 
@@ -59,11 +59,11 @@
   height: 0;
 
   &_at_top {
-    top: 20%;
+    top: 5%;
   }
 
   &_at_btm {
-    bottom: 20%;
+    bottom: 5%;
   }
 }
 
@@ -73,7 +73,7 @@
   cursor: pointer;
 
   &_pulsating {
-    animation: fade-in 1.5s ease-in-out none infinite alternate;
+    animation: pulse 1.5s ease-in-out none infinite alternate;
   }
 }
 
@@ -88,12 +88,11 @@
   font-size: 0.7rem;
   float: right;
 
-  opacity: 0;
-  visibility: hidden;
   background:rgb(15, 15, 15);
   color: var(--text-color-primary);
   border: var(--border-slim) var(--color-gray-light);
-  transition: all 0.3s 0.2s;
+  transition: transform 1s;
+  
 
   &:hover {
     transform: scale(1.1);
@@ -104,8 +103,15 @@
   }
 
   &_visible {
+    visibility: hidden;
+    animation: 0.5s ease 1s fade-in;
+    animation-fill-mode: forwards;
+  }
+
+  &_hidden {
     visibility: visible;
-    opacity: 1;
+    animation: 0.5s fade-out;
+    animation-fill-mode: forwards;
   }
 }
 
@@ -128,14 +134,16 @@
 
 .chat {
   position: relative;
-  width: 500px;
-  height: 650px;
-  background-color: #080808;
+  width: 550px;
+  height: 800px;
+  background-color: #0a0a0a;
   border-radius: var(--radius);
   display: grid;
   grid-template-rows: auto 1fr auto;
   overflow: hidden;
   box-shadow: 0 0 10px 10px #020202;
+
+  border: var(--border-slim) var(--color-gray-darker);
 
   @media screen and (max-width: 30rem) {
     width: 100%;
@@ -146,7 +154,6 @@
   &__status {
     height: 2rem;
     padding: 0 var(--chat-padding);
-    background: var(--color-gray-darker);
     border-radius: var(--radius);
     display: grid;
     gap: 0.5rem;
@@ -177,17 +184,17 @@
     display: grid;
     overflow: hidden;
     grid-template-columns: 1fr auto;
-    gap: 0.1rem;
-    
+    border-top: var(--border-slim) var(--color-gray-darker);
   }
   
   &__input-text {
     height: 2rem;
     max-height: 5rem;
-    padding: 0.5rem var(--chat-padding);
-    background: var(--color-gray-darker);
+    padding: 0.4rem var(--chat-padding);
     border: none;
-    border-radius: var(--radius);
+    border-right: var(--border-slim) var(--color-gray-darker);
+    
+    background: var(--color-gray-darkest);
     color: var(--text-color-primary);
     resize: none;
     white-space: pre-line;
@@ -198,11 +205,12 @@
     height: min(2rem, 100%);
     width: var(--chat-padding);
     border: none;
-    background: var(--color-gray-light);
-    border-radius: var(--radius) 0 0 var(--radius);
-    font-size: 0.7rem;
-    padding: 0 0.5rem;
+    background: var(--color-gray-darkest);
+    font-size: 0.5rem;
     color: var(--text-color-primary);
+
+    display: grid;
+    place-items: center;
 
     &:active {
       opacity: 0.5;
@@ -232,7 +240,7 @@
   font-size: 0.8rem;
   background: var(--color-gray-darker);
 
-  &_type_distinct {
+  &_own {
     align-self: end;
     background: var(--color-gray);
   }

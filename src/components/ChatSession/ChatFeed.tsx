@@ -6,8 +6,8 @@ import type { ViewMessage } from '../../hooks/useSecureChatSession';
 const MessagesList = ({ messages }: { messages: ViewMessage[] }) => {
   return (
     <ul className="messages-list">
-      {messages.map((msg, idx) => (
-        <li key={msg.ciphertext} className={msg.own ? 'message message_type_distinct' : 'message'}>
+      {messages.map((msg) => (
+        <li key={msg.id} className={msg.own ? 'message message_own' : 'message'}>
           {msg.plaintext}
         </li>
       ))}
@@ -18,20 +18,16 @@ const ChatFeed = ({ messages }: { messages: ViewMessage[] }) => {
   const [topRef, btmRef, isTopReached, isBtmReached] = useVerticalBounds<HTMLDivElement>();
   const [feedRef, adjustScroll] = useAdjustScroll<HTMLDivElement>(messages, !isBtmReached);
 
-  if (messages.length === 0) {
-    return (
-      <main className="placeholder">
-        <span className="txt-system txt-system_dimmed">No messages, write something...</span>
-      </main>
-    );
-  }
-
   return (
     <main className="chat__feed" ref={feedRef}>
       <div className="scroll-trap scroll-trap_at_top" aria-hidden ref={topRef} />
       <MessagesList messages={messages} />
       <button
-        className={`btn-scroll-down ${!isBtmReached ? 'btn-scroll-down_visible' : ''}`}
+        className={
+          !isBtmReached
+            ? 'btn-scroll-down btn-scroll-down_visible'
+            : 'btn-scroll-down btn-scroll-down_hidden'
+        }
         onClick={() => adjustScroll()}
       >
         v

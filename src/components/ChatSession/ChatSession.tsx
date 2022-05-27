@@ -4,6 +4,7 @@ import ChatFeed from './ChatFeed';
 import ChatInput from './ChatInput';
 import ChatStatus from './ChatStatus';
 import ChatLoading from './ChatLoading';
+import ChatFeedPlaceholder from './ChatFeedPlaceholder';
 
 const ChatSession = ({ sid }: { sid: string | null }) => {
   const [chatState, send] = useSecureChatSession(sid);
@@ -19,8 +20,12 @@ const ChatSession = ({ sid }: { sid: string | null }) => {
         fingerprint={chatState.sessionFingerprint}
         isClosed={chatState.isClosed}
       />
-      <ChatFeed messages={chatState.messages} />
-      <ChatInput send={send} />
+      {chatState.messages.length > 0 ? (
+        <ChatFeed messages={chatState.messages} />
+      ) : (
+        <ChatFeedPlaceholder />
+      )}
+      <ChatInput sendDisabled={chatState.isClosed} send={send} />
     </div>
   );
 };

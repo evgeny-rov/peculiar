@@ -1,6 +1,12 @@
 import { useState, useRef, useEffect, ChangeEvent } from 'react';
 
-const ChatInput = ({ send }: { send: (text: string) => void }) => {
+const ChatInput = ({
+  send,
+  sendDisabled,
+}: {
+  send: (text: string) => void;
+  sendDisabled: boolean;
+}) => {
   const [text, setText] = useState('');
   const areaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -40,7 +46,7 @@ const ChatInput = ({ send }: { send: (text: string) => void }) => {
         className="chat__input-text"
         placeholder="Type in your message..."
       />
-      <button name="send" className="chat__input-btn" onClick={handleSend}>
+      <button disabled={sendDisabled} name="send" className="chat__input-btn" onClick={handleSend}>
         {'>'}
       </button>
     </footer>

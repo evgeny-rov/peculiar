@@ -4,7 +4,7 @@ const useVerticalBounds = <T extends Element>(
   options?: IntersectionObserverInit
 ): [RefObject<T>, RefObject<T>, boolean, boolean] => {
   const [isTopReached, setIsTopReached] = useState(false);
-  const [isBtmReached, setisBtmReached] = useState(false);
+  const [isBtmReached, setisBtmReached] = useState(true);
   const topRef = useRef<T>(null);
   const btmRef = useRef<T>(null);
 
@@ -34,7 +34,7 @@ const useVerticalBounds = <T extends Element>(
     observer.observe(btmElement);
 
     return () => observer.disconnect();
-  });
+  }, []);
 
   return [topRef, btmRef, isTopReached, isBtmReached];
 };

@@ -22,8 +22,6 @@ const useAdjustScroll = <T extends Element>(
     const resizeObserver = resizeObserverRef.current;
 
     resizeObserver.observe(scrolledElementRef.current);
-
-    console.log('adjusting initial scroll position');
     adjust(false);
 
     return () => resizeObserver.disconnect();

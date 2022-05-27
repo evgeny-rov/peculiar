@@ -74,10 +74,15 @@ export const importKey = (publicKey: JsonWebKey) => {
   );
 };
 
+export const getFingerprint = async (data: ArrayBuffer) => {
+  const result = await window.crypto.subtle.digest('sha-1', data);
+  return arrayBufferToHex(result, '');
+};
+
 export const getKeyFingerprint = async (key: CryptoKey) => {
   const raw = await window.crypto.subtle.exportKey('raw', key);
-  const result = await window.crypto.subtle.digest('sha-1', raw);
-  return arrayBufferToHex(result, '');
+  const result = await getFingerprint(raw);
+  return result;
 };
 
 export const encrypt = async (plaintext: string, key: CryptoKey): Promise<string> => {
@@ -100,7 +105,7 @@ export const encrypt = async (plaintext: string, key: CryptoKey): Promise<string
   return `${ciphertextAsBase64} ${ivAsBase64}`;
 };
 
-export const decrypt = async (cipher: string, key: CryptoKey): Promise<string> => {
+export const decrypt = async (cipher: string, key: CryptoKey): Promise<string[]> => {
   const [ciphertextAsBase64, ivAsBase64] = cipher.split(' ');
 
   const iv = new Uint8Array(base64ToArrayBuffer(ivAsBase64));
@@ -115,5 +120,7 @@ export const decrypt = async (cipher: string, key: CryptoKey): Promise<string> =
     ciphertext
   );
 
-  return decodeText(decrypted);
+  const ciphertextFingerprint = await getFingerprint(ciphertext);
+
+  return [decodeText(decrypted), ciphertextFingerprint];
 };
