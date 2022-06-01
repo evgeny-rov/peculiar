@@ -1,12 +1,7 @@
-import { RefObject, useRef, useLayoutEffect, useEffect, useCallback } from 'react';
-import type { ViewMessage } from './useSecureChatSession';
+import { RefObject, useRef, useEffect, useCallback } from 'react';
 
-const useAdjustScroll = <T extends Element>(
-  messages: ViewMessage[],
-  strict: boolean
-): [RefObject<T>, (smooth?: boolean) => void] => {
+const useAdjustScroll = <T extends Element>(): [RefObject<T>, (smooth?: boolean) => void] => {
   const scrolledElementRef = useRef<T>(null);
-  const strictModeRef = useRef(strict);
 
   const adjust = useCallback((smooth = true) => {
     scrolledElementRef.current?.scrollTo({
@@ -17,7 +12,7 @@ const useAdjustScroll = <T extends Element>(
 
   const resizeObserverRef = useRef(new ResizeObserver(() => adjust()));
 
-  useLayoutEffect(() => {
+  useEffect(() => {
     if (!scrolledElementRef.current) return;
     const resizeObserver = resizeObserverRef.current;
 
@@ -25,20 +20,7 @@ const useAdjustScroll = <T extends Element>(
     adjust(false);
 
     return () => resizeObserver.disconnect();
-  }, []);
-
-  useEffect(() => {
-    strictModeRef.current = strict;
-  }, [strict]);
-
-  useEffect(() => {
-    const isLastMessageOwn = messages[messages.length - 1]?.own;
-    const isInStrictMode = strictModeRef.current;
-
-    if (isInStrictMode && !isLastMessageOwn) return;
-
-    adjust();
-  }, [messages, adjust]);
+  }, [adjust]);
 
   return [scrolledElementRef, adjust];
 };

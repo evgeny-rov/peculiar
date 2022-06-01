@@ -23,7 +23,7 @@ export type Session = {
   close: () => void;
 };
 
-const SERVER_URL = 'ws://localhost:8080/';
+const SERVER_URL = process.env.REACT_APP_DEV_SERVER_URL ?? 'ws://localhost:8080/';
 
 const createSecret = async (privateKey: CryptoKey, receivedKeyOffer: IncomingMessage) => {
   const [, data] = receivedKeyOffer;
@@ -99,8 +99,10 @@ export const establishSession = async ({
       close: () => socket.close(),
     };
   } catch (e) {
-    if (e instanceof SocketError) throw e;
-    if (e instanceof Error) throw Error("Couldn't establish secure session");
-    throw Error('Something went horribly wrong');
+    if (e instanceof SocketError) {
+      throw e;
+    } else {
+      throw Error("Couldn't establish secure session");
+    }
   }
 };
