@@ -7,14 +7,11 @@
   --chat-padding: 1rem;
   --radius: 0.4rem;
 
-  --color-gray-light: #3c3c3c;
-  --color-gray: #353535;
-  --color-gray-darker: #141414;
-  --color-gray-darkest:#0e0e0e;
+  --color-border: hsl(0, 0%, 11%);
 }
 
 .app {
-  background-color: #0a0a0a;
+  background-color: hsl(0, 0%, 7%);
   position: fixed;
   width: 100%;
   height: 100%;
@@ -76,7 +73,7 @@
 
   background:#0f0f0f;
   color: var(--text-color-primary);
-  border: var(--border-slim) var(--color-gray-light);
+  border: var(--border-slim) var(--color-border);
   transition: transform 1s;
 
   visibility: hidden;
@@ -118,14 +115,14 @@
   position: relative;
   width: 550px;
   height: 800px;
-  background-color: #0f0f0f;
+  background-color: hsl(0, 0%, 9%);
   border-radius: var(--radius);
   display: grid;
   grid-template-rows: auto 1fr auto;
   overflow: hidden;
-  box-shadow: 0 0 10px 10px #080808;
+  box-shadow: 0 0 10px 10px hsl(0, 0%, 6%);
 
-  border: var(--border-slim) var(--color-gray-darker);
+  border: var(--border-slim) var(--color-border);
 
   @media screen and (max-width: 30rem) {
     width: 100%;
@@ -158,7 +155,7 @@
     padding: var(--chat-padding);
 
     &::-webkit-scrollbar {
-      // display: none;
+      display: none;
     }
   }
 
@@ -166,7 +163,7 @@
     display: grid;
     overflow: hidden;
     grid-template-columns: 1fr auto;
-    border-top: var(--border-slim) var(--color-gray-darker);
+    border-top: var(--border-slim) var(--color-border);
   }
   
   &__input-text {
@@ -174,7 +171,7 @@
     max-height: 5rem;
     padding: 0.4rem var(--chat-padding);
     border: none;    
-    background: var(--color-gray-darkest);
+    background: hsl(0, 0%, 10%);
     color: var(--text-color-primary);
     resize: none;
     white-space: pre-line;
@@ -185,7 +182,7 @@
     height: min(2rem, 100%);
     width: 4rem;
     border: none;
-    background: var(--color-gray-darker);
+    background: hsl(0, 0%, 14%);
     font-size: 0.5rem;
     color: var(--text-color-primary);
 
@@ -214,15 +211,15 @@
   width: fit-content;
   max-width: 80%;
   border-radius: var(--radius);
-  border: var(--border-slim) var(--color-gray-light);
+  border: var(--border-slim) hsl(0, 0%, 15%);
   word-break: break-word;
   white-space: pre-wrap;
-  font-size: 0.8rem;
-  background: var(--color-gray-darker);
-
+  font-size: 0.9rem;
+  background: hsl(0, 0%, 11%);
+  
   &_own {
     align-self: end;
-    background: var(--color-gray);
+    background: hsl(0, 0%, 14%);
   }
 }
 
