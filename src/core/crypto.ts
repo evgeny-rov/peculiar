@@ -1,3 +1,8 @@
+type Cipher = {
+  iv: Uint8Array;
+  text: ArrayBufferLike;
+};
+
 const encodeText = (text: string) => {
   const enc = new TextEncoder();
   return enc.encode(text);
@@ -29,6 +34,22 @@ const base64ToArrayBuffer = (base64: string) => {
 };
 
 const getRandomIV = () => window.crypto.getRandomValues(new Uint8Array(12));
+
+export const parseCipher = (serializedCipher: string): Cipher => {
+  const [ciphertextAsBase64, ivAsBase64] = serializedCipher.split(' ');
+
+  const iv = new Uint8Array(base64ToArrayBuffer(ivAsBase64));
+  const ciphertext = base64ToArrayBuffer(ciphertextAsBase64);
+
+  return { iv, text: ciphertext };
+};
+
+export const serializeCipher = (cipher: Cipher) => {
+  const ivAsBase64 = arrayBufferToBase64(cipher.iv.buffer);
+  const ciphertextAsBase64 = arrayBufferToBase64(cipher.text);
+
+  return `${ciphertextAsBase64} ${ivAsBase64}`;
+};
 
 export const generateKeyPair = () => {
   return window.crypto.subtle.generateKey(
@@ -85,12 +106,11 @@ export const getKeyFingerprint = async (key: CryptoKey) => {
   return result;
 };
 
-export const encrypt = async (plaintext: string, key: CryptoKey): Promise<string> => {
+export const encrypt = async (plaintext: string, key: CryptoKey): Promise<Cipher> => {
   const encoded = encodeText(plaintext);
-
   const iv = getRandomIV();
 
-  const encrypted = await window.crypto.subtle.encrypt(
+  const ciphertext = await window.crypto.subtle.encrypt(
     {
       name: 'AES-GCM',
       iv: iv,
@@ -99,28 +119,18 @@ export const encrypt = async (plaintext: string, key: CryptoKey): Promise<string
     encoded
   );
 
-  const ivAsBase64 = arrayBufferToBase64(iv.buffer);
-  const ciphertextAsBase64 = arrayBufferToBase64(encrypted);
-
-  return `${ciphertextAsBase64} ${ivAsBase64}`;
+  return { iv, text: ciphertext };
 };
 
-export const decrypt = async (cipher: string, key: CryptoKey): Promise<string[]> => {
-  const [ciphertextAsBase64, ivAsBase64] = cipher.split(' ');
-
-  const iv = new Uint8Array(base64ToArrayBuffer(ivAsBase64));
-  const ciphertext = base64ToArrayBuffer(ciphertextAsBase64);
-
+export const decrypt = async (cipher: Cipher, key: CryptoKey): Promise<string> => {
   const decrypted = await window.crypto.subtle.decrypt(
     {
       name: 'AES-GCM',
-      iv: iv,
+      iv: cipher.iv,
     },
     key,
-    ciphertext
+    cipher.text
   );
 
-  const ciphertextFingerprint = await getFingerprint(ciphertext);
-
-  return [decodeText(decrypted), ciphertextFingerprint];
+  return decodeText(decrypted);
 };

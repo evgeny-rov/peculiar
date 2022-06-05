@@ -7,9 +7,14 @@ import type { ViewMessage } from '../../hooks/useSecureChatSession';
 const MessagesList = ({ messages }: { messages: ViewMessage[] }) => {
   return (
     <ul className="messages-list">
-      {messages.map((msg) => (
-        <li key={msg.id} className={msg.own ? 'message message_own' : 'message'}>
-          {msg.plaintext}
+      {messages.map((message) => (
+        <li key={message.id} className={message.own ? 'message message_own' : 'message'}>
+          <span
+            className={message.own ? 'message__bubble message__bubble_lighter' : 'message__bubble'}
+          >
+            {message.plaintext}
+          </span>
+          <span className="message__fingerprint">{message.fingerprint}</span>
         </li>
       ))}
     </ul>
@@ -17,8 +22,6 @@ const MessagesList = ({ messages }: { messages: ViewMessage[] }) => {
 };
 
 const MESSAGES_CHUNK_SIZE = 30;
-
-console.log(process.env);
 
 const ChatFeed = ({ messages }: { messages: ViewMessage[] }) => {
   const [isBrowsing, setIsBrowsing] = useState(false);
@@ -42,9 +45,11 @@ const ChatFeed = ({ messages }: { messages: ViewMessage[] }) => {
   const handleScroll = useCallback((e: React.UIEvent<HTMLElement, UIEvent>) => {
     const target = e.target as HTMLElement;
     const yFromTop = target.scrollTop;
-    const yFromBtm = target.scrollHeight - yFromTop - target.clientHeight;
+    const yFromBtm = Math.floor(target.scrollHeight - yFromTop - target.clientHeight);
 
-    if (yFromBtm >= yFromTop) {
+    console.log({ yFromBtm, yFromTop });
+
+    if (yFromBtm > yFromTop) {
       setNumOfMsgsChunks((chunks) => chunks + 1);
       setIsBrowsing(true);
     } else if (yFromBtm > 0) {

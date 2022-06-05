@@ -7,8 +7,7 @@ export type ViewMessage = {
   id: string;
   own: boolean;
   plaintext: string;
-  fingerprint?: string;
-  timestamp?: number;
+  fingerprint: string;
 };
 
 export type RootState = {
@@ -61,13 +60,14 @@ const useChat = (sid: string | null = null): [RootState, (text: string) => void]
     }));
   }, []);
 
-  const send = useCallback((text: string) => {
+  const send = useCallback(async (text: string) => {
     if (!sessionRef.current) return;
 
-    sessionRef.current.send(text);
+    const fingerprint = await sessionRef.current.send(text);
+
     setState((state) => ({
       ...state,
-      messages: [...state.messages, { id: uuidv4(), own: true, plaintext: text }],
+      messages: [...state.messages, { id: uuidv4(), own: true, plaintext: text, fingerprint }],
     }));
   }, []);
 

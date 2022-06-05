@@ -4,8 +4,11 @@ import {
   encrypt,
   exportKey,
   generateKeyPair,
+  getFingerprint,
   getKeyFingerprint,
   importKey,
+  parseCipher,
+  serializeCipher,
 } from './crypto';
 import { AppWebSocket, fetchSocket, IncomingMessage, SocketError } from './socket';
 
@@ -19,7 +22,7 @@ type SessionParams = {
 
 export type MessageData = string;
 export type Session = {
-  send: (data: MessageData) => Promise<void>;
+  send: (data: MessageData) => Promise<string>;
   close: () => void;
 };
 
@@ -27,9 +30,9 @@ const SERVER_URL = process.env.REACT_APP_DEV_SERVER_URL ?? 'ws://localhost:8080/
 
 const createSecret = async (privateKey: CryptoKey, receivedKeyOffer: IncomingMessage) => {
   const [, data] = receivedKeyOffer;
-  const receivedJwkJson = JSON.parse(data);
-  const receivedJwk = await importKey(receivedJwkJson);
-  const sharedSecret = await deriveSecretKey(privateKey, receivedJwk);
+  const receivedJwk = JSON.parse(data);
+  const receivedKey = await importKey(receivedJwk);
+  const sharedSecret = await deriveSecretKey(privateKey, receivedKey);
   return sharedSecret;
 };
 
@@ -39,10 +42,13 @@ const handleEncryptedMessage = async (
   onSuccess: (plaintext: string, fingerprint: string) => any,
   onError: (reason: string) => any
 ) => {
-  const [, ciphertext] = message;
-
   try {
-    const [plaintext, ciphertextFingerprint] = await decrypt(ciphertext, key);
+    const [, rawCipher] = message;
+    const cipher = parseCipher(rawCipher);
+
+    const plaintext = await decrypt(cipher, key);
+    const ciphertextFingerprint = await getFingerprint(cipher.text);
+
     onSuccess(plaintext, ciphertextFingerprint);
   } catch (e) {
     onError('Received incorrectly encrypted message');
@@ -50,8 +56,12 @@ const handleEncryptedMessage = async (
 };
 
 const sendEncrypted = async (socket: AppWebSocket, key: CryptoKey, data: MessageData) => {
-  const encrypted = await encrypt(data, key);
-  socket.send('encrypted', encrypted);
+  const cipher = await encrypt(data, key);
+  const ciphertextFingerprint = await getFingerprint(cipher.text);
+  const serializedCipher = serializeCipher(cipher);
+
+  socket.send('encrypted', serializedCipher);
+  return ciphertextFingerprint;
 };
 
 export const establishSession = async ({

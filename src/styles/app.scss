@@ -3,7 +3,7 @@
 
   --border-slim: 1px solid;
   --text-color-primary: white;
-  --font-size-system: 0.8rem;
+  --font-size-system: clamp(0.5rem, 3vw, 0.7rem);
   --chat-padding: 1rem;
   --radius: 0.4rem;
 
@@ -39,10 +39,6 @@
 
   &_nonselectible {
     user-select: none;
-  }
-
-  &_size_sm {
-    font-size: 0.7rem;
   }
 
   &_dimmed {
@@ -89,12 +85,12 @@
   }
 
   &_visible {
-    animation: 0.5s ease 1s fade-in;
+    animation: fade-in 0.5s ease 1s;
     animation-fill-mode: forwards;
   }
 }
 
-.placeholder {
+.feed-placeholder {
   display: grid;
   place-items: center;
 }
@@ -103,8 +99,9 @@
   height: 0.5rem;
   width: 0.5rem;
   border-radius: 50%;
+  flex-shrink: 0;
 
-  background-color: greenyellow;
+  background-color: #adff2f;
   
   &_inactive {
     background-color: #ff3300;
@@ -113,8 +110,8 @@
 
 .chat {
   position: relative;
-  width: 550px;
-  height: 800px;
+  width: 32rem;
+  height: 50rem;
   background-color: hsl(0, 0%, 9%);
   border-radius: var(--radius);
   display: grid;
@@ -124,7 +121,7 @@
 
   border: var(--border-slim) var(--color-border);
 
-  @media screen and (max-width: 30rem) {
+  @media only screen and (max-width: 32rem), (max-height: 50rem) {
     width: 100%;
     height: 100%;
     border-radius: 0;
@@ -134,9 +131,8 @@
     height: 2rem;
     padding: 0 var(--chat-padding);
     border-radius: var(--radius);
-    display: grid;
+    display: flex;
     gap: 0.5rem;
-    grid-auto-flow: column;
     align-items: center;
     justify-content: space-between;
   }
@@ -169,7 +165,7 @@
   &__input-text {
     height: 2rem;
     max-height: 5rem;
-    padding: 0.4rem var(--chat-padding);
+    padding: 0.5rem var(--chat-padding);
     border: none;    
     background: hsl(0, 0%, 10%);
     color: var(--text-color-primary);
@@ -207,19 +203,45 @@
 }
 
 .message {
-  padding: 0.5rem;
-  width: fit-content;
-  max-width: 80%;
-  border-radius: var(--radius);
-  border: var(--border-slim) hsl(0, 0%, 15%);
-  word-break: break-word;
-  white-space: pre-wrap;
-  font-size: 0.9rem;
-  background: hsl(0, 0%, 11%);
-  
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+  width: 100%;
+  font-size: 0.8rem;
+  overflow: hidden;
+
   &_own {
-    align-self: end;
-    background: hsl(0, 0%, 14%);
+    flex-direction: row-reverse;
+    text-align: right;
+  }
+  
+  &__bubble {
+    flex-shrink: 0;
+    padding: 0.5rem;
+    width: fit-content;
+    max-width: 75%;
+    background: hsl(0, 0%, 11%);
+    border-radius: var(--radius);
+    border: var(--border-slim) hsl(0, 0%, 20%);
+    word-break: break-word;
+    white-space: pre-wrap;
+
+    &_lighter {
+      background: hsl(0, 0%, 17%);
+    }
+  }
+
+  &__fingerprint {
+    display: block;
+    opacity: 0;
+    width: 100%;
+    font-size: 0.6rem;
+    word-break: break-word;
+    transition: opacity 0.5s;
+  }
+
+  &:hover &__fingerprint {
+    opacity: 0.3;
   }
 }
 
