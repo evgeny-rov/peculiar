@@ -20,6 +20,8 @@ const ChatInput = ({
   };
 
   const handleSend = () => {
+    if (sendDisabled) return;
+
     const trimmedText = text.trim();
     if (!trimmedText) return;
 

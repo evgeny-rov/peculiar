@@ -47,8 +47,6 @@ const ChatFeed = ({ messages }: { messages: ViewMessage[] }) => {
     const yFromTop = target.scrollTop;
     const yFromBtm = Math.floor(target.scrollHeight - yFromTop - target.clientHeight);
 
-    console.log({ yFromBtm, yFromTop });
-
     if (yFromBtm > yFromTop) {
       setNumOfMsgsChunks((chunks) => chunks + 1);
       setIsBrowsing(true);
