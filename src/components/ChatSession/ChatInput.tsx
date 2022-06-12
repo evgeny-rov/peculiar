@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect, ChangeEvent } from 'react';
+import { useTranslation } from 'react-i18next';
 
 const ChatInput = ({
   send,
@@ -7,6 +8,7 @@ const ChatInput = ({
   send: (text: string) => void;
   sendDisabled: boolean;
 }) => {
+  const { t } = useTranslation();
   const [text, setText] = useState('');
   const areaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -46,7 +48,7 @@ const ChatInput = ({
         onKeyDown={handleKeyPress}
         name="message"
         className="chat__input-text"
-        placeholder="Type in your message..."
+        placeholder={t('input_placeholder')}
       />
       <button disabled={sendDisabled} name="send" className="chat__input-btn" onClick={handleSend}>
         {'>'}

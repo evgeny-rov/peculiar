@@ -1,7 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { v4 as uuidv4 } from 'uuid';
-import { establishSession } from '../core/session';
-import type { Session } from '../core/session';
+import establishSession from '../core/secureSession';
+import { useTranslation } from 'react-i18next';
+
+import { ConnectionError } from '../core/secureSession';
 
 export type ViewMessage = {
   id: string;
@@ -19,39 +21,38 @@ export type RootState = {
   messages: ViewMessage[];
 };
 
-const createInitialState = (): RootState => ({
+const initialState: RootState = {
   messages: [],
   isEstablished: false,
   isClosed: false,
   sessionFingerprint: null,
   sessionId: null,
-  info: 'Establishing session...',
-});
+  info: '',
+};
 
 const useChat = (sid: string | null = null): [RootState, (text: string) => void] => {
-  const sessionRef = useRef<Session>();
-  const [state, setState] = useState<RootState>(createInitialState());
+  const { t } = useTranslation();
+  const sessionRef = useRef<Awaited<ReturnType<typeof establishSession>>>();
+  const [state, setState] = useState<RootState>({
+    ...initialState,
+    info: t('info_establishing'),
+  });
 
   const handleCreated = (sid: string) => {
     setState((state) => ({
       ...state,
       sessionId: sid,
-      info: 'Session created, you can now share session url',
+      info: t('info_created'),
     }));
   };
 
-  const handleEstablished = useCallback((fingerprint: string) => {
-    setState((state) => ({
-      ...state,
-      isEstablished: true,
-      sessionFingerprint: fingerprint,
-      info: 'Messages encrypted',
-    }));
-  }, []);
-
-  const handleClose = useCallback((reason: string) => {
-    setState((state) => ({ ...state, isClosed: true, info: reason }));
-  }, []);
+  const handleClose = useCallback(
+    (code: number) => {
+      const text = t([`close_codes.${code}` as any, 'error_connection_lost']);
+      setState((state) => ({ ...state, isClosed: true, info: text }));
+    },
+    [t]
+  );
 
   const handleMessage = useCallback((plaintext: string, fingerprint: string) => {
     setState((state) => ({
@@ -74,16 +75,25 @@ const useChat = (sid: string | null = null): [RootState, (text: string) => void]
   useEffect(() => {
     establishSession({
       onCreated: handleCreated,
-      onEstablished: handleEstablished,
       onMessage: handleMessage,
       onClose: handleClose,
       sid,
     })
       .then((session) => {
         sessionRef.current = session;
+        setState((state) => ({
+          ...state,
+          isEstablished: true,
+          sessionFingerprint: session.sharedKeyFingerprint,
+          info: t('info_established'),
+        }));
       })
-      .catch((e) => {
-        handleClose(e.message);
+      .catch((e: unknown) => {
+        if (e instanceof ConnectionError) {
+          setState((state) => ({ ...state, info: t('error_server_unavailable') }));
+        } else {
+          setState((state) => ({ ...state, info: t('error_establishing_failed') }));
+        }
       });
     return () => sessionRef.current?.close();
   }, []);
