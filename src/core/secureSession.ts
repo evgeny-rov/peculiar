@@ -19,7 +19,7 @@ const errorMessagesByCloseCode = {
   4102: 'Message encryption failed',
 } as const;
 
-const SERVER_URL = process.env.REACT_APP_DEV_SERVER_URL ?? 'ws://localhost:8080/';
+const SERVER_URL = 'ws://one-to-one-relay.herokuapp.com/';
 
 export const fetchSocket = (url: string) =>
   new Promise<WebSocket>((res, rej) => {

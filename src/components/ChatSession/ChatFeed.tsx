@@ -21,7 +21,7 @@ const MessagesList = ({ messages }: { messages: ViewMessage[] }) => {
   );
 };
 
-const MESSAGES_CHUNK_SIZE = 30;
+const MESSAGES_CHUNK_SIZE = 50;
 
 const ChatFeed = ({ messages }: { messages: ViewMessage[] }) => {
   const [isBrowsing, setIsBrowsing] = useState(false);
@@ -47,7 +47,7 @@ const ChatFeed = ({ messages }: { messages: ViewMessage[] }) => {
     const yFromTop = target.scrollTop;
     const yFromBtm = Math.floor(target.scrollHeight - yFromTop - target.clientHeight);
 
-    if (yFromBtm > yFromTop) {
+    if (yFromBtm / 4 > yFromTop) {
       setNumOfMsgsChunks((chunks) => chunks + 1);
       setIsBrowsing(true);
     } else if (yFromBtm > 0) {
