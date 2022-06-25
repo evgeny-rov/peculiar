@@ -10,6 +10,16 @@
   --color-border: hsl(0, 0%, 11%);
 }
 
+@keyframes fade-in {
+  0% { opacity: 0; }
+  100% { opacity: 1; visibility: visible; }
+}
+
+@keyframes pulse {
+  from { opacity: 0.2; }
+  to { opacity: 1; }
+}
+
 .app {
   background-color: hsl(0, 0%, 7%);
   position: fixed;
@@ -19,7 +29,7 @@
   place-items: center;
 }
 
-.loading {
+.wrapper {
   display: grid;
   gap: 0.5rem;
   place-items: center;
@@ -229,19 +239,6 @@
     &_lighter {
       background: hsl(0, 0%, 17%);
     }
-  }
-
-  &__fingerprint {
-    display: block;
-    opacity: 0;
-    width: 100%;
-    font-size: 0.6rem;
-    word-break: break-word;
-    transition: opacity 0.5s;
-  }
-
-  &:hover &__fingerprint {
-    opacity: 0.3;
   }
 }
 

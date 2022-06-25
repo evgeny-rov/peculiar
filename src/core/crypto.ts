@@ -13,24 +13,20 @@ const decodeText = (decrypted: ArrayBuffer) => {
   return dec.decode(decrypted);
 };
 
-const arrayBufferToBase64 = (buffer: ArrayBuffer) => {
-  const result: string[] = [];
-  new Uint8Array(buffer).forEach((byte) => result.push(String.fromCharCode(byte)));
-  return window.btoa(result.join(''));
-};
-
 const arrayBufferToHex = (buffer: ArrayBuffer, separator = '') => {
   return new Uint8Array(buffer)
     .reduce<string[]>((a, b) => [...a, b.toString(16).padStart(2, '0')], [])
     .join(separator);
 };
 
-const base64ToArrayBuffer = (base64: string) => {
-  const binary_string = window.atob(base64);
-  const result = new Uint8Array(binary_string.length).map((_, idx) =>
-    binary_string.charCodeAt(idx)
-  );
-  return result.buffer;
+const hexToArrayBuffer = (hexEncodedString: string) => {
+  const octets = hexEncodedString.match(/[\da-f]{2}/gi);
+
+  if (octets) {
+    return new Uint8Array(octets.map((h) => parseInt(h, 16)));
+  }
+
+  return new Uint8Array();
 };
 
 const getRandomIV = () => window.crypto.getRandomValues(new Uint8Array(12));
@@ -38,15 +34,15 @@ const getRandomIV = () => window.crypto.getRandomValues(new Uint8Array(12));
 export const parseCipher = (serializedCipher: string): Cipher => {
   const [ciphertextAsBase64, ivAsBase64] = serializedCipher.split(' ');
 
-  const iv = new Uint8Array(base64ToArrayBuffer(ivAsBase64));
-  const ciphertext = base64ToArrayBuffer(ciphertextAsBase64);
+  const iv = new Uint8Array(hexToArrayBuffer(ivAsBase64));
+  const ciphertext = hexToArrayBuffer(ciphertextAsBase64);
 
   return { iv, text: ciphertext };
 };
 
 export const serializeCipher = (cipher: Cipher) => {
-  const ivAsBase64 = arrayBufferToBase64(cipher.iv.buffer);
-  const ciphertextAsBase64 = arrayBufferToBase64(cipher.text);
+  const ivAsBase64 = arrayBufferToHex(cipher.iv.buffer);
+  const ciphertextAsBase64 = arrayBufferToHex(cipher.text);
 
   return `${ciphertextAsBase64} ${ivAsBase64}`;
 };
@@ -78,14 +74,17 @@ export const deriveSecretKey = (privateKey: CryptoKey, publicKey: CryptoKey) => 
   );
 };
 
-export const exportKey = (publicKey: CryptoKey) => {
-  return window.crypto.subtle.exportKey('jwk', publicKey);
+export const exportKey = async (key: CryptoKey) => {
+  const rawKey = await window.crypto.subtle.exportKey('raw', key);
+  return arrayBufferToHex(rawKey);
 };
 
-export const importKey = (publicKey: JsonWebKey) => {
+export const importKey = (hexEncodedKey: string) => {
+  const rawKey = hexToArrayBuffer(hexEncodedKey);
+
   return window.crypto.subtle.importKey(
-    'jwk',
-    publicKey,
+    'raw',
+    rawKey,
     {
       name: 'ECDH',
       namedCurve: 'P-384',
@@ -96,7 +95,7 @@ export const importKey = (publicKey: JsonWebKey) => {
 };
 
 export const getFingerprint = async (data: ArrayBuffer) => {
-  const result = await window.crypto.subtle.digest('sha-1', data);
+  const result = await window.crypto.subtle.digest('sha-256', data);
   return arrayBufferToHex(result, '');
 };
 
@@ -104,6 +103,11 @@ export const getKeyFingerprint = async (key: CryptoKey) => {
   const raw = await window.crypto.subtle.exportKey('raw', key);
   const result = await getFingerprint(raw);
   return result;
+};
+
+export const computeHash = async (data: string) => {
+  const result = await window.crypto.subtle.digest('sha-256', encodeText(data));
+  return arrayBufferToHex(result, '');
 };
 
 export const encrypt = async (plaintext: string, key: CryptoKey): Promise<Cipher> => {

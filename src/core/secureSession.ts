@@ -7,9 +7,9 @@ export type IncomingMessage = [ReceivedMessageType, string];
 export class ConnectionError extends Error {}
 
 type SessionParams = {
-  sid: string | null;
+  sessionContext?: string;
   onCreated: (sid: string) => any;
-  onMessage: (plaintext: string, ciphertext: string) => any;
+  onMessage: (plaintext: string) => any;
   onClose: (code: number) => any;
 };
 
@@ -17,6 +17,7 @@ const errorMessagesByCloseCode = {
   4100: 'Received unexpected message',
   4101: 'Message decryption failed',
   4102: 'Message encryption failed',
+  4103: 'Session verification failed',
 } as const;
 
 const SERVER_URL = 'ws://one-to-one-relay.herokuapp.com/';
@@ -48,8 +49,15 @@ function* strictReceiver(socket: WebSocket, order: ReceivedMessageType[]) {
   let orderState = 0;
   const promises = order.map((type) => ({ ...defer(), type }));
 
-  socket.onclose = () =>
-    promises.forEach(({ reject }) => reject(Error(errorMessagesByCloseCode[4100])));
+  const abandonListeners = () => {
+    socket.onclose = null;
+    socket.onmessage = null;
+  };
+
+  socket.onclose = () => {
+    abandonListeners();
+    promises[orderState]?.reject(Error(errorMessagesByCloseCode[4100]));
+  };
 
   socket.onmessage = ({ data }) => {
     const message = parseMessage(data);
@@ -57,7 +65,7 @@ function* strictReceiver(socket: WebSocket, order: ReceivedMessageType[]) {
 
     if (isInExpectedOrder) {
       promises[orderState].resolve(message[1]);
-      orderState++;
+      ++orderState >= order.length && abandonListeners();
     } else {
       socket.close(4100, errorMessagesByCloseCode[4100]);
     }
@@ -66,50 +74,84 @@ function* strictReceiver(socket: WebSocket, order: ReceivedMessageType[]) {
   for (const { promise } of promises) yield promise;
 }
 
-const createSecret = async (privateKey: CryptoKey, receivedKeyOffer: string) => {
-  const receivedJwk = JSON.parse(receivedKeyOffer);
-  const receivedKey = await crypto.importKey(receivedJwk);
-  const sharedSecret = await crypto.deriveSecretKey(privateKey, receivedKey);
-  return sharedSecret;
-};
+const computeSessionHash = (initiatorPubKey: string, guestPubKey: string, sessionId: string) =>
+  crypto.computeHash(initiatorPubKey + guestPubKey + sessionId);
 
-const establishSession = async ({ sid, onCreated, onMessage, onClose }: SessionParams) => {
+const createSession = async (socket: WebSocket, onSuccess: (response: string) => any) => {
   const keyPair = await crypto.generateKeyPair();
   const ownExportedPubKey = await crypto.exportKey(keyPair.publicKey);
-  const socket = await fetchSocket(SERVER_URL);
+  const receiver = strictReceiver(socket, ['created', 'connected', 'key']);
 
-  const isInitiator = !sid;
-  const receiver = strictReceiver(
-    socket,
-    isInitiator ? ['created', 'connected', 'key'] : ['connected', 'key']
-  );
+  socket.send(serializeMessage('create'));
+  const createdResponse = (await receiver.next().value) as string;
 
-  if (isInitiator) {
-    socket.send(serializeMessage('create'));
-    const createdResponse = await receiver.next().value;
-    onCreated(createdResponse);
-  } else {
-    socket.send(serializeMessage('connect', sid));
-  }
+  const initiatorHash = await crypto.computeHash(ownExportedPubKey + createdResponse);
+  onSuccess(initiatorHash + createdResponse);
 
   await receiver.next().value;
-  socket.send(serializeMessage('key', JSON.stringify(ownExportedPubKey)));
+  socket.send(serializeMessage('key', ownExportedPubKey));
 
-  const keyOffer = await receiver.next().value;
-  const sharedKey = await createSecret(keyPair.privateKey, keyOffer);
-  const sharedKeyFingerprint = await crypto.getKeyFingerprint(sharedKey);
+  const receivedKeyOffer = (await receiver.next().value) as string;
+  const receivedKey = await crypto.importKey(receivedKeyOffer);
+  const sharedSecret = await crypto.deriveSecretKey(keyPair.privateKey, receivedKey);
+
+  const sessionHash = await computeSessionHash(
+    ownExportedPubKey,
+    receivedKeyOffer,
+    createdResponse
+  );
+
+  return { key: sharedSecret, sessionHash };
+};
+
+const joinSession = async (socket: WebSocket, serializedSessionOffer: string) => {
+  const [receivedInitiatorHash, sessionId] = serializedSessionOffer.match(/.{1,64}/g) || [];
+  const keyPair = await crypto.generateKeyPair();
+  const ownExportedPubKey = await crypto.exportKey(keyPair.publicKey);
+  const receiver = strictReceiver(socket, ['connected', 'key']);
+
+  socket.send(serializeMessage('connect', sessionId));
+  await receiver.next().value;
+
+  const receivedKeyOffer = (await receiver.next().value) as string;
+
+  const computedInitiatorHash = await crypto.computeHash(receivedKeyOffer + sessionId);
+
+  if (computedInitiatorHash !== receivedInitiatorHash) {
+    socket.close(4103, errorMessagesByCloseCode[4103]);
+    throw Error(errorMessagesByCloseCode[4103]);
+  }
+
+  socket.send(serializeMessage('key', ownExportedPubKey));
+  const receivedKey = await crypto.importKey(receivedKeyOffer);
+  const sharedSecret = await crypto.deriveSecretKey(keyPair.privateKey, receivedKey);
+
+  const sessionHash = await computeSessionHash(receivedKeyOffer, ownExportedPubKey, sessionId);
+
+  return { key: sharedSecret, sessionHash };
+};
+
+const establishSession = async ({
+  sessionContext,
+  onCreated,
+  onMessage,
+  onClose,
+}: SessionParams) => {
+  const socket = await fetchSocket(SERVER_URL);
+
+  const { key, sessionHash } = sessionContext
+    ? await joinSession(socket, sessionContext)
+    : await createSession(socket, onCreated);
 
   socket.onclose = (ev) => onClose(ev.code);
   socket.onmessage = async ({ data }) => {
     try {
       const message = parseMessage(data);
-      const [, rawCipher] = message;
-      const cipher = crypto.parseCipher(rawCipher);
+      const [, serializedCipher] = message;
+      const cipher = crypto.parseCipher(serializedCipher);
+      const plaintext = await crypto.decrypt(cipher, key);
 
-      const plaintext = await crypto.decrypt(cipher, sharedKey);
-      const ciphertextFingerprint = await crypto.getFingerprint(cipher.text);
-
-      onMessage(plaintext, ciphertextFingerprint);
+      onMessage(plaintext);
     } catch {
       socket.close(4101, errorMessagesByCloseCode[4101]);
     }
@@ -117,19 +159,16 @@ const establishSession = async ({ sid, onCreated, onMessage, onClose }: SessionP
 
   const send = async (data: string) => {
     try {
-      const cipher = await crypto.encrypt(data, sharedKey);
-      const ciphertextFingerprint = await crypto.getFingerprint(cipher.text);
+      const cipher = await crypto.encrypt(data, key);
       const serializedCipher = crypto.serializeCipher(cipher);
 
       socket.send(serializeMessage('encrypted', serializedCipher));
-      return ciphertextFingerprint;
     } catch {
       socket.close(4102, errorMessagesByCloseCode[4102]);
-      return '';
     }
   };
 
-  return { sharedKeyFingerprint, send, close: () => socket.close() };
+  return { hash: sessionHash, send, close: () => socket.close() };
 };
 
 export default establishSession;

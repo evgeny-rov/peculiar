@@ -14,7 +14,6 @@ const MessagesList = ({ messages }: { messages: ViewMessage[] }) => {
           >
             {message.plaintext}
           </span>
-          <span className="message__fingerprint">{message.fingerprint}</span>
         </li>
       ))}
     </ul>

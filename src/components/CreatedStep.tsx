@@ -1,6 +1,6 @@
-const ChatLoading = ({ info, sessionId }: { info: string; sessionId: string | null }) => {
+const CreatedStep = ({ sessionId, info }: { sessionId: string; info: string }) => {
   return (
-    <div className="loading">
+    <div className="wrapper">
       <div>
         <span className="caret">{'>_'}</span>
         <span className="txt-system txt-system_nonselectible">{info}</span>
@@ -10,4 +10,4 @@ const ChatLoading = ({ info, sessionId }: { info: string; sessionId: string | nu
   );
 };
 
-export default ChatLoading;
+export default CreatedStep;

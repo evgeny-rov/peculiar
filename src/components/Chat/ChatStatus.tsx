@@ -1,22 +1,20 @@
 const ChatStatus = ({
   info,
-  isClosed,
+  isConnected,
   fingerprint,
 }: {
   info: string;
-  isClosed: boolean;
-  fingerprint: string | null;
+  isConnected: boolean;
+  fingerprint: string;
 }) => {
   return (
     <header className="chat__status">
       <div className="chat__status-info">
-        <span className={isClosed ? 'status-light status-light_inactive' : 'status-light'} />
+        <span className={isConnected ? 'status-light' : 'status-light status-light_inactive'} />
         <span className="txt-system txt-system_dimmed">{info}</span>
       </div>
 
-      {!isClosed && fingerprint && (
-        <span className="txt-system txt-system_dimmed">SF: {fingerprint}</span>
-      )}
+      {fingerprint && <span className="txt-system txt-system_dimmed">SF: {fingerprint}</span>}
     </header>
   );
 };
