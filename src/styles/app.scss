@@ -1,0 +1,251 @@
+:root {
+  color-scheme: dark;
+
+  --border-slim: 1px solid;
+  --text-color-primary: white;
+  --font-size-system: clamp(0.5rem, 3vw, 0.7rem);
+  --chat-padding: 1rem;
+  --radius: 0.4rem;
+
+  --color-border: hsl(0, 0%, 11%);
+}
+
+@keyframes fade-in {
+  0% { opacity: 0; }
+  100% { opacity: 1; visibility: visible; }
+}
+
+@keyframes pulse {
+  from { opacity: 0.2; }
+  to { opacity: 1; }
+}
+
+.app {
+  background-color: hsl(0, 0%, 7%);
+  position: fixed;
+  width: 100%;
+  height: 100%;
+  display: grid;
+  place-items: center;
+}
+
+.wrapper {
+  display: grid;
+  gap: 0.5rem;
+  place-items: center;
+}
+
+.caret {
+  margin: 0 0.4rem;
+  color: var(--text-color-primary);
+  opacity: 0.3;
+  letter-spacing: -0.2ch;
+  user-select: none;
+}
+
+.txt-system {
+  color: var(--text-color-primary);
+  font-size: var(--font-size-system);
+
+  &_nonselectible {
+    user-select: none;
+  }
+
+  &_dimmed {
+    opacity: 0.3;
+  }
+}
+
+.btn-txt {
+  background: none;
+  border: none;
+  cursor: pointer;
+
+  &_pulsating {
+    animation: pulse 1.5s ease-in-out none infinite alternate;
+  }
+}
+
+.btn-scroll-down {
+  position: sticky;
+  bottom: 1rem;
+  right: 1rem;
+  width: 2rem;
+  height: 2rem;
+  margin: -2rem;
+  border-radius: 50%;
+  font-size: 0.7rem;
+  float: right;
+
+  background:#0f0f0f;
+  color: var(--text-color-primary);
+  border: var(--border-slim) var(--color-border);
+  transition: transform 1s;
+
+  visibility: hidden;
+  opacity: 0;
+  
+
+  &:hover {
+    transform: scale(1.1);
+  }
+
+  &:active {
+    transform: scale(0.9);
+  }
+
+  &_visible {
+    animation: fade-in 0.5s ease 1s;
+    animation-fill-mode: forwards;
+  }
+}
+
+.feed-placeholder {
+  display: grid;
+  place-items: center;
+}
+
+.status-light {
+  height: 0.5rem;
+  width: 0.5rem;
+  border-radius: 50%;
+  flex-shrink: 0;
+
+  background-color: #adff2f;
+  
+  &_inactive {
+    background-color: #ff3300;
+  }
+}
+
+.chat {
+  position: relative;
+  width: 32rem;
+  height: 50rem;
+  background-color: hsl(0, 0%, 9%);
+  border-radius: var(--radius);
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  overflow: hidden;
+  box-shadow: 0 0 10px 10px hsl(0, 0%, 6%);
+
+  border: var(--border-slim) var(--color-border);
+
+  @media only screen and (max-width: 32rem), (max-height: 50rem) {
+    width: 100%;
+    height: 100%;
+    border-radius: 0;
+  }
+
+  &__status {
+    height: 2rem;
+    padding: 0 var(--chat-padding);
+    border-radius: var(--radius);
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  &__status-info {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  &__feed {
+    position: relative;
+    overflow-x: hidden;
+    overflow-y: auto;
+    
+    padding: var(--chat-padding);
+
+    &::-webkit-scrollbar {
+      display: none;
+    }
+  }
+
+  &__input {
+    display: grid;
+    overflow: hidden;
+    grid-template-columns: 1fr auto;
+    border-top: var(--border-slim) var(--color-border);
+  }
+  
+  &__input-text {
+    height: 2rem;
+    max-height: 5rem;
+    padding: 0.5rem var(--chat-padding);
+    border: none;    
+    background: hsl(0, 0%, 10%);
+    color: var(--text-color-primary);
+    resize: none;
+    white-space: pre-line;
+  }
+  
+  &__input-btn {
+    align-self: flex-end;
+    height: min(2rem, 100%);
+    width: 4rem;
+    border: none;
+    background: hsl(0, 0%, 14%);
+    font-size: 0.5rem;
+    color: var(--text-color-primary);
+
+    display: grid;
+    place-items: center;
+
+    &:active {
+      opacity: 0.5;
+    }
+  }
+}
+
+.messages-list {
+  min-height: 100%;
+  padding: 0;
+  margin: 0;
+  list-style: none;
+  display: flex;
+  flex-flow: column;
+  justify-content: flex-end;
+  gap: 0.8rem;
+}
+
+.message {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+  width: 100%;
+  font-size: 0.8rem;
+  overflow: hidden;
+
+  &_own {
+    flex-direction: row-reverse;
+    text-align: right;
+  }
+  
+  &__bubble {
+    flex-shrink: 0;
+    padding: 0.5rem;
+    width: fit-content;
+    max-width: 75%;
+    background: hsl(0, 0%, 11%);
+    border-radius: var(--radius);
+    border: var(--border-slim) hsl(0, 0%, 20%);
+    word-break: break-word;
+    white-space: pre-wrap;
+
+    &_lighter {
+      background: hsl(0, 0%, 17%);
+    }
+  }
+}
+
+
+
+
+
+
+
+
