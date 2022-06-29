@@ -33,6 +33,8 @@
   display: grid;
   gap: 0.5rem;
   place-items: center;
+  text-align: center;
+  padding: 1rem;
 }
 
 .caret {
@@ -46,13 +48,18 @@
 .txt-system {
   color: var(--text-color-primary);
   font-size: var(--font-size-system);
-
+  word-break: break-all;
+  
   &_nonselectible {
     user-select: none;
   }
-
+  
   &_dimmed {
     opacity: 0.3;
+  }
+  
+  &_lowercase {
+    text-transform: lowercase;
   }
 }
 
@@ -60,6 +67,11 @@
   background: none;
   border: none;
   cursor: pointer;
+
+  &_type_copy {
+    cursor: copy;
+    user-select: all;
+  }
 
   &_pulsating {
     animation: pulse 1.5s ease-in-out none infinite alternate;
@@ -151,6 +163,16 @@
     display: flex;
     align-items: center;
     gap: 0.5rem;
+  }
+
+  &__status-fp-text {
+    font-size: 0.5rem;
+    text-transform: uppercase;
+    opacity: 0;
+    word-break: break-all;
+
+    animation: fade-in ease 0.5s;
+    animation-fill-mode: forwards;
   }
 
   &__feed {

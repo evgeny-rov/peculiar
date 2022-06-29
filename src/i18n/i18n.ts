@@ -8,6 +8,7 @@ export const resources = {
       welcome_text: 'Start session',
       feed_placeholder: 'No messages, write something...',
       input_placeholder: 'Write message...',
+      url_copied: 'Url copied',
 
       info_created: 'Session created, you can share session url',
       info_establishing: 'Establishing session...',
@@ -32,6 +33,7 @@ export const resources = {
       welcome_text: 'Начать сеанс',
       feed_placeholder: 'Сообщений нет, напишите что-нибудь...',
       input_placeholder: 'Написать сообщение...',
+      url_copied: 'Адрес скопирован',
 
       info_created: 'Сеанс создан, поделитесь адресом сеанса',
       info_establishing: 'Настройка сеанса...',

@@ -27,7 +27,7 @@ const App = () => {
         <Chat
           isLive={true}
           messages={session.messages}
-          fingerprint={session.fingerprint}
+          sessionHash={session.hash}
           info={session.info}
           send={session.send}
         />
@@ -36,7 +36,7 @@ const App = () => {
         <Chat
           isLive={false}
           messages={session.messages}
-          fingerprint={session.fingerprint}
+          sessionHash={session.hash}
           info={session.info}
           send={session.send}
         />

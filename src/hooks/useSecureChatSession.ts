@@ -20,7 +20,7 @@ const useSecureChatSession = () => {
   const [state, setState] = useState<SessionStates>('initial');
   const [info, setInfo] = useState('');
   const [id, setId] = useState('');
-  const [fingerprint, setFingerprint] = useState('');
+  const [sessionHash, setSessionHash] = useState('');
   const [messages, setMessages] = useState<ViewMessage[]>([]);
 
   const handleCreated = useCallback(
@@ -70,7 +70,7 @@ const useSecureChatSession = () => {
 
         setState('established');
         setInfo(t('info_established'));
-        setFingerprint(session.hash);
+        setSessionHash(session.hash);
       } catch (e) {
         const isConnectionError = e instanceof ConnectionError;
         setInfo(isConnectionError ? t('error_server_unavailable') : t('error_establishing_failed'));
@@ -79,7 +79,7 @@ const useSecureChatSession = () => {
     [handleClose, handleCreated, handleMessage, t]
   );
 
-  return { state, info, id, fingerprint, messages, send, establish, terminate };
+  return { state, info, id, hash: sessionHash, messages, send, establish, terminate };
 };
 
 export default useSecureChatSession;
