@@ -94,17 +94,6 @@ export const importKey = (hexEncodedKey: string) => {
   );
 };
 
-export const getFingerprint = async (data: ArrayBuffer) => {
-  const result = await window.crypto.subtle.digest('sha-256', data);
-  return arrayBufferToHex(result, '');
-};
-
-export const getKeyFingerprint = async (key: CryptoKey) => {
-  const raw = await window.crypto.subtle.exportKey('raw', key);
-  const result = await getFingerprint(raw);
-  return result;
-};
-
 export const computeHash = async (data: string) => {
   const result = await window.crypto.subtle.digest('sha-256', encodeText(data));
   return arrayBufferToHex(result, '');
