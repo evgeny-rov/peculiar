@@ -11,7 +11,7 @@ const App = () => {
   const session = useSecureChatSession();
 
   useEffect(() => {
-    const sessionContext = getSessionContextFromUrl(window.location.pathname);
+    const sessionContext = getSessionContextFromUrl(window.location);
     const shouldAutoConnect = sessionContext !== null;
     if (shouldAutoConnect) session.establish(sessionContext);
 

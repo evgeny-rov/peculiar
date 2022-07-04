@@ -1,7 +1,5 @@
-const getSessionContextFromUrl = (pathname: string) => {
-  const [, context] = pathname.split('/');
-
-  if (context.length > 0) return context;
+const getSessionContextFromUrl = ({ hash }: Location) => {
+  if (hash.length > 0) return hash.slice(1);
 
   return null;
 };

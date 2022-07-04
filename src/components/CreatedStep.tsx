@@ -5,7 +5,7 @@ import Caret from './Caret';
 const CreatedStep = ({ sessionId, info }: { sessionId: string; info: string }) => {
   const { t } = useTranslation();
   const [copied, setCopied] = useState(false);
-  const sessionUrl = `${window.location.origin}/${sessionId}`;
+  const sessionUrl = `${window.location.origin}/#${sessionId}`;
 
   const handleCopy = () => {
     navigator.clipboard.writeText(sessionUrl).then(() => setCopied(true));
