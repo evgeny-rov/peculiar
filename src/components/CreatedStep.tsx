@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import Caret from './Caret';
 
 const CreatedStep = ({ sessionId, info }: { sessionId: string; info: string }) => {
   const { t } = useTranslation();
@@ -13,8 +14,8 @@ const CreatedStep = ({ sessionId, info }: { sessionId: string; info: string }) =
   return (
     <main className="wrapper">
       <div>
-        <span className="caret">{'>_'}</span>
-        <span className="txt-system txt-system_nonselectible txt-system_lowercase">
+        <Caret />
+        <span className="txt-system txt-system_nonselectible">
           {copied ? t('url_copied') : info}
         </span>
       </div>

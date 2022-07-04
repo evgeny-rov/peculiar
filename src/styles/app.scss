@@ -4,6 +4,7 @@
   --border-slim: 1px solid;
   --text-color-primary: white;
   --font-size-system: clamp(0.5rem, 3vw, 0.7rem);
+  --caret-text-size: clamp(0.7rem, 4vw, 1rem);
   --chat-padding: 1rem;
   --radius: 0.4rem;
 
@@ -30,19 +31,22 @@
 }
 
 .wrapper {
-  display: grid;
+  display: flex;
+  flex-direction: column;
   gap: 0.5rem;
-  place-items: center;
-  text-align: center;
+  align-items: flex-start;
   padding: 1rem;
+
+  max-width: 25rem;
 }
 
 .caret {
-  margin: 0 0.4rem;
+  margin-right: 0.5rem;
   color: var(--text-color-primary);
   opacity: 0.3;
   letter-spacing: -0.2ch;
   user-select: none;
+  font-size: var(--caret-text-size);
 }
 
 .txt-system {
@@ -57,20 +61,21 @@
   &_dimmed {
     opacity: 0.3;
   }
-  
-  &_lowercase {
-    text-transform: lowercase;
-  }
 }
 
 .btn-txt {
   background: none;
   border: none;
   cursor: pointer;
-
+  padding: 0;
+  
   &_type_copy {
+    background-color: hsl(0, 0%, 12%);
+    padding: 0.5rem;
+    border-radius: 0.5rem;
     cursor: copy;
     user-select: all;
+    text-align: start;
   }
 
   &_pulsating {
