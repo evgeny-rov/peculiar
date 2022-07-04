@@ -20,7 +20,7 @@ const errorMessagesByCloseCode = {
   4103: 'Session verification failed',
 } as const;
 
-const SERVER_URL = 'ws://one-to-one-relay.herokuapp.com/';
+const SERVER_URL = 'wss://one-to-one-relay.herokuapp.com/';
 
 export const fetchSocket = (url: string) =>
   new Promise<WebSocket>((res, rej) => {
