@@ -10,9 +10,13 @@ export const resources = {
       input_placeholder: 'Write message...',
       url_copied: 'Url copied',
 
+      tooltip_security:
+        'Waveforms should be identical for both participants, compare them to make sure the session is secure.',
+
       info_created: 'Session created, you can share session url',
       info_establishing: 'Establishing session...',
       info_established: 'Messages encrypted',
+      info_retry: 'Try again',
 
       error_connection_lost: 'Connection lost',
       error_server_unavailable: "Couldn't connect to the server",
@@ -35,9 +39,13 @@ export const resources = {
       input_placeholder: 'Написать сообщение...',
       url_copied: 'Адрес скопирован',
 
-      info_created: 'Сеанс создан, поделитесь адресом сеанса',
+      tooltip_security:
+        'Осциллограммы должны быть идентичны для обоих участников, сравните их, чтобы убедиться в безопасности сеанса.',
+
+      info_created: 'Сеанс создан, поделитесь ссылкой сеанса',
       info_establishing: 'Настройка сеанса...',
       info_established: 'Сообщения зашифрованы',
+      info_retry: 'Попробовать снова',
 
       error_connection_lost: 'Соединение потеряно',
       error_server_unavailable: 'Не удалось подключиться к серверу',

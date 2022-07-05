@@ -34,10 +34,14 @@
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
-  align-items: flex-start;
+  align-items: center;
   padding: 1rem;
 
   max-width: 25rem;
+
+  &_align_start {
+    align-items: flex-start;
+  }
 }
 
 .caret {
@@ -63,11 +67,43 @@
   }
 }
 
-.btn-txt {
+.tooltip {
+  visibility: hidden;
+  position: absolute;
+  right: 1rem;
+  top: 2.5rem;
+  width: 60%;
+  background-color: hsl(0, 0%, 15%);
+  padding: 0.5rem;
+  border-radius: 0.5rem;
+  display: grid;
+  place-items: center;
+
+  &__text {
+    font-size: 0.7rem;
+    // word-break: break-all;
+  }
+
+  &::after {
+    content: '';
+    position: absolute;
+    top: -0.4rem;
+    right: 1rem;
+
+    width: 0; 
+    height: 0; 
+    border-left: 0.5rem solid transparent;
+    border-right: 0.5rem solid transparent;
+  
+    border-bottom: 0.4rem solid hsl(0, 0%, 15%);    
+  }
+}
+
+.btn {
   background: none;
   border: none;
-  cursor: pointer;
   padding: 0;
+  cursor: pointer;
   
   &_type_copy {
     background-color: hsl(0, 0%, 12%);
@@ -80,6 +116,17 @@
 
   &_pulsating {
     animation: pulse 1.5s ease-in-out none infinite alternate;
+  }
+}
+
+.btn-status {
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+
+  &:hover > .tooltip {
+    visibility: visible;
   }
 }
 
