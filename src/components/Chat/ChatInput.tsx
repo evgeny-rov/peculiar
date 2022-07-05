@@ -12,6 +12,7 @@ const ChatInput = ({ send, restricted }: { send: (text: string) => void; restric
   }, [text]);
 
   const handleChange = (e: ChangeEvent<HTMLTextAreaElement>) => {
+    if (restricted) return;
     setText(e.target.value);
   };
 
@@ -23,6 +24,7 @@ const ChatInput = ({ send, restricted }: { send: (text: string) => void; restric
 
     send(trimmedText);
     setText('');
+    areaRef.current && areaRef.current.focus();
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {

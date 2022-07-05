@@ -1,11 +1,14 @@
 import React, { useEffect } from 'react';
 import getSessionContextFromUrl from './helpers/getSessionContextFromUrl';
 import useSecureChatSession from './hooks/useSecureChatSession';
+import ErrorModal from './components/ErrorModal';
 import WelcomeStep from './components/WelcomeStep';
 import EstablishingStep from './components/EstablishingStep';
 import CreatedStep from './components/CreatedStep';
 import Chat from './components/Chat';
 import './styles/app.scss';
+
+const refreshPage = () => window.location.reload();
 
 const App = () => {
   const session = useSecureChatSession();
@@ -20,6 +23,7 @@ const App = () => {
 
   return (
     <div className="app">
+      {session.state === 'error' && <ErrorModal info={session.info} onAction={refreshPage} />}
       {session.state === 'initial' && <WelcomeStep onAction={session.establish} />}
       {session.state === 'establishing' && <EstablishingStep info={session.info} />}
       {session.state === 'created' && <CreatedStep info={session.info} sessionId={session.id} />}

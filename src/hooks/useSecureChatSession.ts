@@ -11,7 +11,13 @@ export type ViewMessage = {
   plaintext: string;
 };
 
-type SessionStates = 'initial' | 'establishing' | 'created' | 'established' | 'terminated';
+type SessionStates =
+  | 'initial'
+  | 'establishing'
+  | 'created'
+  | 'error'
+  | 'established'
+  | 'terminated';
 
 const useSecureChatSession = () => {
   const { t } = useTranslation();
@@ -74,6 +80,7 @@ const useSecureChatSession = () => {
       } catch (e) {
         const isConnectionError = e instanceof ConnectionError;
         setInfo(isConnectionError ? t('error_server_unavailable') : t('error_establishing_failed'));
+        setState('error');
       }
     },
     [handleClose, handleCreated, handleMessage, t]
