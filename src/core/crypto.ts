@@ -32,19 +32,19 @@ const hexToArrayBuffer = (hexEncodedString: string) => {
 const getRandomIV = () => window.crypto.getRandomValues(new Uint8Array(12));
 
 export const parseCipher = (serializedCipher: string): Cipher => {
-  const [ciphertextAsBase64, ivAsBase64] = serializedCipher.split(' ');
+  const [ciphertextAsHex, ivAsHex] = serializedCipher.split(' ');
 
-  const iv = new Uint8Array(hexToArrayBuffer(ivAsBase64));
-  const ciphertext = hexToArrayBuffer(ciphertextAsBase64);
+  const iv = new Uint8Array(hexToArrayBuffer(ivAsHex));
+  const ciphertext = hexToArrayBuffer(ciphertextAsHex);
 
   return { iv, text: ciphertext };
 };
 
 export const serializeCipher = (cipher: Cipher) => {
-  const ivAsBase64 = arrayBufferToHex(cipher.iv.buffer);
-  const ciphertextAsBase64 = arrayBufferToHex(cipher.text);
+  const ivAsHex = arrayBufferToHex(cipher.iv.buffer);
+  const ciphertextAsHex = arrayBufferToHex(cipher.text);
 
-  return `${ciphertextAsBase64} ${ivAsBase64}`;
+  return `${ciphertextAsHex} ${ivAsHex}`;
 };
 
 export const generateKeyPair = () => {

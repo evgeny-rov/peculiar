@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import { useEffect } from 'react';
 import getSessionContextFromUrl from './helpers/getSessionContextFromUrl';
 import useSecureChatSession from './hooks/useSecureChatSession';
 import ErrorModal from './components/ErrorModal';
