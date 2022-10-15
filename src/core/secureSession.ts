@@ -5,6 +5,11 @@ type ReceivedMessageType = 'created' | 'connected' | 'key' | 'encrypted';
 export type IncomingMessage = [ReceivedMessageType, string];
 
 export class ConnectionError extends Error {}
+export class SessionError extends Error {
+  constructor(public message: string, public code: number) {
+    super();
+  }
+}
 
 type SessionParams = {
   sessionContext?: string;
@@ -54,9 +59,9 @@ function* strictReceiver(socket: WebSocket, order: ReceivedMessageType[]) {
     socket.onmessage = null;
   };
 
-  socket.onclose = () => {
+  socket.onclose = (ev) => {
     abandonListeners();
-    promises[orderState]?.reject(Error(errorMessagesByCloseCode[4100]));
+    promises[orderState]?.reject(new SessionError(ev.reason, ev.code));
   };
 
   socket.onmessage = ({ data }) => {

@@ -3,7 +3,7 @@ import { v4 as uuidv4 } from 'uuid';
 import establishSession from '../core/secureSession';
 import { useTranslation } from 'react-i18next';
 
-import { ConnectionError } from '../core/secureSession';
+import { ConnectionError, SessionError } from '../core/secureSession';
 
 export type ViewMessage = {
   id: string;
@@ -77,9 +77,17 @@ const useSecureChatSession = () => {
         setState('established');
         setInfo(t('info_established'));
         setSessionHash(session.hash);
-      } catch (e) {
-        const isConnectionError = e instanceof ConnectionError;
-        setInfo(isConnectionError ? t('error_server_unavailable') : t('error_establishing_failed'));
+      } catch (error) {
+        console.log(error);
+        if (error instanceof SessionError) {
+          const reason = t([`close_codes.${error.code}` as any, 'error_establishing_failed']);
+          setInfo(reason);
+        } else if (error instanceof ConnectionError) {
+          setInfo(t('error_server_unavailable'));
+        } else {
+          setInfo(t('error_establishing_failed'));
+        }
+
         setState('error');
       }
     },
