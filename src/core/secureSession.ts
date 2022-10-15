@@ -25,17 +25,21 @@ const errorMessagesByCloseCode = {
   4103: 'Session verification failed',
 } as const;
 
-const SERVER_URL = 'wss://one-to-one-relay.herokuapp.com/';
+const SERVER_URLS = [
+  'wss://one-to-one-relay-production.up.railway.app/',
+  'wss://onet1.onrender.com/',
+  'wss://one-to-one-relay.herokuapp.com/',
+];
 
-export const fetchSocket = (url: string) =>
-  new Promise<WebSocket>((res, rej) => {
+export const fetchSocket = (url: string, id: number) =>
+  new Promise<{ socket: WebSocket; id: number }>((res, rej) => {
     const socket = new WebSocket(url);
 
     if (socket.readyState === socket.OPEN) {
-      res(socket);
+      res({ socket, id });
     } else {
       socket.onopen = () => {
-        res(socket);
+        res({ socket, id });
       };
 
       socket.onerror = () => rej(new ConnectionError("Couldn't connect to the server"));
@@ -82,7 +86,9 @@ function* strictReceiver(socket: WebSocket, order: ReceivedMessageType[]) {
 const computeSessionHash = (initiatorPubKey: string, guestPubKey: string, sessionId: string) =>
   crypto.computeHash(initiatorPubKey + guestPubKey + sessionId);
 
-const createSession = async (socket: WebSocket, onSuccess: (response: string) => any) => {
+const createSession = async (onSuccess: (response: string) => any) => {
+  const { socket, id: serverId } = await Promise.race(SERVER_URLS.map(fetchSocket));
+
   const keyPair = await crypto.generateKeyPair();
   const ownExportedPubKey = await crypto.exportKey(keyPair.publicKey);
   const receiver = strictReceiver(socket, ['created', 'connected', 'key']);
@@ -91,7 +97,7 @@ const createSession = async (socket: WebSocket, onSuccess: (response: string) =>
   const createdResponse = (await receiver.next().value) as string;
 
   const initiatorHash = await crypto.computeHash(ownExportedPubKey + createdResponse);
-  onSuccess(initiatorHash + createdResponse);
+  onSuccess(serverId + initiatorHash + createdResponse);
 
   await receiver.next().value;
   socket.send(serializeMessage('key', ownExportedPubKey));
@@ -106,11 +112,15 @@ const createSession = async (socket: WebSocket, onSuccess: (response: string) =>
     createdResponse
   );
 
-  return { key: sharedSecret, sessionHash };
+  return { key: sharedSecret, sessionHash, socket };
 };
 
-const joinSession = async (socket: WebSocket, serializedSessionOffer: string) => {
-  const [receivedInitiatorHash, sessionId] = serializedSessionOffer.match(/.{1,64}/g) || [];
+const joinSession = async (serializedSessionOffer: string) => {
+  const [, serverIdString, receivedInitiatorHash, sessionId] =
+    serializedSessionOffer.match(/([0-9])(.{64})(.+)/) || [];
+  const serverId = Number(serverIdString);
+
+  const { socket } = await fetchSocket(SERVER_URLS[serverId], serverId);
   const keyPair = await crypto.generateKeyPair();
   const ownExportedPubKey = await crypto.exportKey(keyPair.publicKey);
   const receiver = strictReceiver(socket, ['connected', 'key']);
@@ -133,7 +143,7 @@ const joinSession = async (socket: WebSocket, serializedSessionOffer: string) =>
 
   const sessionHash = await computeSessionHash(receivedKeyOffer, ownExportedPubKey, sessionId);
 
-  return { key: sharedSecret, sessionHash };
+  return { key: sharedSecret, sessionHash, socket };
 };
 
 const establishSession = async ({
@@ -142,11 +152,9 @@ const establishSession = async ({
   onMessage,
   onClose,
 }: SessionParams) => {
-  const socket = await fetchSocket(SERVER_URL);
-
-  const { key, sessionHash } = sessionContext
-    ? await joinSession(socket, sessionContext)
-    : await createSession(socket, onCreated);
+  const { key, sessionHash, socket } = sessionContext
+    ? await joinSession(sessionContext)
+    : await createSession(onCreated);
 
   socket.onclose = (ev) => onClose(ev.code);
   socket.onmessage = async ({ data }) => {
