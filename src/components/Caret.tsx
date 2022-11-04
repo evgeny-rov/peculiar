@@ -1,3 +1,3 @@
-const Caret = () => <span className="caret">{'>.'}</span>;
+const Caret = () => <span className="caret">&raquo;</span>;
 
 export default Caret;

@@ -1,6 +1,7 @@
 import { useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import useDelay from '../../hooks/useDelay';
+import Loading from '../Loading';
 import VisualizedHash from '../VisualizedHash';
 
 const ChatStatus = ({
@@ -26,6 +27,14 @@ const ChatStatus = ({
     setIsFullHashVisible(false);
   }, []);
 
+  if (!sessionHash)
+    return (
+      <header className="chat__status">
+        <span className="txt-system txt-system_dimmed">{t('info_establishing')}</span>
+        <Loading bars={8} width="2rem" strokeWidth={4} color="#aaa" />
+      </header>
+    );
+
   return (
     <header className="chat__status">
       <div className="chat__status-info">
@@ -37,7 +46,7 @@ const ChatStatus = ({
         )}
       </div>
       <button onClick={isFullHashVisible ? hideFullHash : showFullHash} className="btn-status">
-        <VisualizedHash data={sessionHash} height={'1rem'} strokeWidth={2} color="#fff" />
+        <VisualizedHash data={sessionHash} width="2rem" strokeWidth={4} color="#aaa" />
         <div className="tooltip">
           <span className="tooltip__text">{t('tooltip_security')}</span>
         </div>

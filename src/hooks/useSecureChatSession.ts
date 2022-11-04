@@ -29,6 +29,8 @@ const useSecureChatSession = () => {
   const [sessionHash, setSessionHash] = useState('');
   const [messages, setMessages] = useState<ViewMessage[]>([]);
 
+  const isLive = state === 'established';
+
   const handleCreated = useCallback(
     (sid: string) => {
       setState('created');
@@ -60,9 +62,12 @@ const useSecureChatSession = () => {
   const terminate = useCallback(() => sessionRef.current?.close(), []);
 
   const establish = useCallback(
-    async (sessionContext?: string) => {
+    async (sessionContext: string | null = null) => {
       setState('establishing');
       setInfo(t('info_establishing'));
+      setId('');
+      setSessionHash('');
+      setMessages([]);
 
       try {
         const session = await establishSession({
@@ -78,7 +83,6 @@ const useSecureChatSession = () => {
         setInfo(t('info_established'));
         setSessionHash(session.hash);
       } catch (error) {
-        console.log(error);
         if (error instanceof SessionError) {
           const reason = t([`close_codes.${error.code}` as any, 'error_establishing_failed']);
           setInfo(reason);
@@ -94,7 +98,7 @@ const useSecureChatSession = () => {
     [handleClose, handleCreated, handleMessage, t]
   );
 
-  return { state, info, id, hash: sessionHash, messages, send, establish, terminate };
+  return { state, info, id, hash: sessionHash, messages, send, establish, terminate, isLive };
 };
 
 export default useSecureChatSession;

@@ -17,7 +17,7 @@ const CreatedStep = ({ sessionId, info }: { sessionId: string; info: string }) =
   };
 
   return (
-    <main className="wrapper wrapper_align_start">
+    <main className="wrapper">
       <div>
         <Caret />
         <span className="txt-system txt-system_nonselectible">

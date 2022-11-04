@@ -17,7 +17,7 @@ const VisualizedHash = ({ data, strokeWidth, color, showTracks, ...restProps }: 
   const svgHeight = svgWidth / 3;
   const centerY = svgHeight / 2;
 
-  const chunkSize = 4;
+  const chunkSize = 8;
   const dataInChunks = splitIntoChunks(data, chunkSize);
   const cells = dataInChunks.length;
   const cellSize = svgWidth / cells;
@@ -56,13 +56,16 @@ const VisualizedHash = ({ data, strokeWidth, color, showTracks, ...restProps }: 
             )}
             <line
               x1={startX}
-              y1={startY}
+              y1={centerY}
               x2={endX}
-              y2={endY}
+              y2={centerY}
               strokeLinecap="round"
               strokeWidth={strokeWidth}
               stroke={color}
-            />
+            >
+              <animate attributeName="y1" from={centerY} to={startY} dur="0.5s" fill="freeze" />
+              <animate attributeName="y2" from={centerY} to={endY} dur="0.5s" fill="freeze" />
+            </line>
           </g>
         );
       })}

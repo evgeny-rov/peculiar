@@ -12,7 +12,7 @@ export class SessionError extends Error {
 }
 
 type SessionParams = {
-  sessionContext?: string;
+  sessionContext?: string | null;
   onCreated: (sid: string) => any;
   onMessage: (plaintext: string) => any;
   onClose: (code: number) => any;
