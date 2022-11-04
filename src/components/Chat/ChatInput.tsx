@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect, ChangeEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 
-const ChatInput = ({ send, restricted }: { send: (text: string) => void; restricted: boolean }) => {
+const ChatInput = ({ send, disabled }: { send: (text: string) => void; disabled: boolean }) => {
   const { t } = useTranslation();
   const [text, setText] = useState('');
   const areaRef = useRef<HTMLTextAreaElement>(null);
@@ -12,13 +12,10 @@ const ChatInput = ({ send, restricted }: { send: (text: string) => void; restric
   }, [text]);
 
   const handleChange = (e: ChangeEvent<HTMLTextAreaElement>) => {
-    if (restricted) return;
     setText(e.target.value);
   };
 
   const handleSend = () => {
-    if (restricted) return;
-
     const trimmedText = text.trim();
     if (!trimmedText) return;
 
@@ -43,11 +40,12 @@ const ChatInput = ({ send, restricted }: { send: (text: string) => void; restric
         onChange={handleChange}
         onKeyDown={handleKeyPress}
         name="message"
+        disabled={disabled}
         className="chat__input-text"
         placeholder={t('input_placeholder')}
       />
-      <button disabled={restricted} name="send" className="chat__input-btn" onClick={handleSend}>
-        {'>'}
+      <button disabled={disabled} name="send" className="chat__input-btn" onClick={handleSend}>
+        &raquo;
       </button>
     </footer>
   );

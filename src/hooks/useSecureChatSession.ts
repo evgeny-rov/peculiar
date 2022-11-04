@@ -3,7 +3,7 @@ import { v4 as uuidv4 } from 'uuid';
 import establishSession from '../core/secureSession';
 import { useTranslation } from 'react-i18next';
 
-import { ConnectionError } from '../core/secureSession';
+import { ConnectionError, SessionError } from '../core/secureSession';
 
 export type ViewMessage = {
   id: string;
@@ -28,6 +28,8 @@ const useSecureChatSession = () => {
   const [id, setId] = useState('');
   const [sessionHash, setSessionHash] = useState('');
   const [messages, setMessages] = useState<ViewMessage[]>([]);
+
+  const isLive = state === 'established';
 
   const handleCreated = useCallback(
     (sid: string) => {
@@ -60,9 +62,12 @@ const useSecureChatSession = () => {
   const terminate = useCallback(() => sessionRef.current?.close(), []);
 
   const establish = useCallback(
-    async (sessionContext?: string) => {
+    async (sessionContext: string | null = null) => {
       setState('establishing');
       setInfo(t('info_establishing'));
+      setId('');
+      setSessionHash('');
+      setMessages([]);
 
       try {
         const session = await establishSession({
@@ -77,16 +82,23 @@ const useSecureChatSession = () => {
         setState('established');
         setInfo(t('info_established'));
         setSessionHash(session.hash);
-      } catch (e) {
-        const isConnectionError = e instanceof ConnectionError;
-        setInfo(isConnectionError ? t('error_server_unavailable') : t('error_establishing_failed'));
+      } catch (error) {
+        if (error instanceof SessionError) {
+          const reason = t([`close_codes.${error.code}` as any, 'error_establishing_failed']);
+          setInfo(reason);
+        } else if (error instanceof ConnectionError) {
+          setInfo(t('error_server_unavailable'));
+        } else {
+          setInfo(t('error_establishing_failed'));
+        }
+
         setState('error');
       }
     },
     [handleClose, handleCreated, handleMessage, t]
   );
 
-  return { state, info, id, hash: sessionHash, messages, send, establish, terminate };
+  return { state, info, id, hash: sessionHash, messages, send, establish, terminate, isLive };
 };
 
 export default useSecureChatSession;

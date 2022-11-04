@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { throttle } from 'lodash';
 import useAdjustScroll from '../../hooks/useAdjustScroll';
+import { throttle } from 'lodash';
 
 import type { ViewMessage } from '../../hooks/useSecureChatSession';
+import { useTranslation } from 'react-i18next';
 
 const MessagesList = ({ messages }: { messages: ViewMessage[] }) => {
   return (
@@ -23,6 +24,7 @@ const MessagesList = ({ messages }: { messages: ViewMessage[] }) => {
 const MESSAGES_CHUNK_SIZE = 50;
 
 const ChatFeed = ({ messages }: { messages: ViewMessage[] }) => {
+  const { t } = useTranslation();
   const [isBrowsing, setIsBrowsing] = useState(false);
   const [numOfMsgsChunks, setNumOfMsgsChunks] = useState(1);
   const [feedRef, adjustScroll] = useAdjustScroll<HTMLDivElement>();
@@ -60,6 +62,14 @@ const ChatFeed = ({ messages }: { messages: ViewMessage[] }) => {
   const shownMessages = useMemo(() => {
     return messages.slice(Math.max(messages.length - numOfMsgsChunks * MESSAGES_CHUNK_SIZE, 0));
   }, [messages, numOfMsgsChunks]);
+
+  if (messages.length === 0) {
+    return (
+      <main className="feed-placeholder">
+        <span className="txt-system txt-system_dimmed">{t('feed_placeholder')}</span>
+      </main>
+    );
+  }
 
   return (
     <main className="chat__feed" ref={feedRef} onScroll={throttle(handleScroll, 100)}>

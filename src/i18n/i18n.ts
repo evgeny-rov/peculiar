@@ -5,18 +5,19 @@ import LanguageDetector from 'i18next-browser-languagedetector';
 export const resources = {
   en: {
     translation: {
-      welcome_text: 'Start session',
       feed_placeholder: 'No messages, write something...',
       input_placeholder: 'Write message...',
-      url_copied: 'Url copied',
+      url_copied: 'Link copied',
 
       tooltip_security:
-        'Waveforms should be identical for both participants, compare them to make sure the session is secure.',
+        'Pictures should be identical for both participants, compare them to make sure the session is secure.',
 
-      info_created: 'Session created, you can share session url',
+      info_created: 'Session created, tap to copy session link',
       info_establishing: 'Establishing session...',
       info_established: 'Messages encrypted',
-      info_retry: 'Try again',
+
+      action_retry: 'Try again',
+      action_new_session: 'Create new session',
 
       error_connection_lost: 'Connection lost',
       error_server_unavailable: "Couldn't connect to the server",
@@ -40,12 +41,14 @@ export const resources = {
       url_copied: 'Адрес скопирован',
 
       tooltip_security:
-        'Осциллограммы должны быть идентичны для обоих участников, сравните их, чтобы убедиться в безопасности сеанса.',
+        'Картинки должны быть идентичны для обоих участников, сравните их, чтобы убедиться в безопасности сеанса.',
 
       info_created: 'Сеанс создан, поделитесь ссылкой сеанса',
       info_establishing: 'Настройка сеанса...',
       info_established: 'Сообщения зашифрованы',
-      info_retry: 'Попробовать снова',
+
+      action_retry: 'Попробовать снова',
+      action_new_session: 'Создать новый сеанс',
 
       error_connection_lost: 'Соединение потеряно',
       error_server_unavailable: 'Не удалось подключиться к серверу',

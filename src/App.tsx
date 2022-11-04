@@ -1,50 +1,49 @@
+import './styles/app.scss';
 import { useEffect } from 'react';
 import getSessionContextFromUrl from './helpers/getSessionContextFromUrl';
 import useSecureChatSession from './hooks/useSecureChatSession';
-import ErrorModal from './components/ErrorModal';
-import WelcomeStep from './components/WelcomeStep';
+import ChatFeed from './components/Chat/ChatFeed';
+import ChatInput from './components/Chat/ChatInput';
+import ChatStatus from './components/Chat/ChatStatus';
+import Error from './components/Error';
 import EstablishingStep from './components/EstablishingStep';
 import CreatedStep from './components/CreatedStep';
-import Chat from './components/Chat';
-import './styles/app.scss';
 
-const refreshPage = () => window.location.reload();
+let didInit = false;
 
 const App = () => {
   const session = useSecureChatSession();
 
   useEffect(() => {
-    const sessionContext = getSessionContextFromUrl(window.location);
-    const shouldAutoConnect = sessionContext !== null;
-    if (shouldAutoConnect) session.establish(sessionContext);
-
-    return () => session.terminate();
+    if (!didInit) {
+      didInit = true;
+      const sessionContext = getSessionContextFromUrl(window.location);
+      session.establish(sessionContext);
+    }
   }, []);
+
+  const retry = () => {
+    const sessionContext = getSessionContextFromUrl(window.location);
+    session.establish(sessionContext);
+  };
+
+  const createNewSession = () => {
+    window.location.hash = '';
+    session.establish();
+  };
 
   return (
     <div className="app">
-      {session.state === 'error' && <ErrorModal info={session.info} onAction={refreshPage} />}
-      {session.state === 'initial' && <WelcomeStep onAction={session.establish} />}
-      {session.state === 'establishing' && <EstablishingStep info={session.info} />}
-      {session.state === 'created' && <CreatedStep info={session.info} sessionId={session.id} />}
-      {session.state === 'established' && (
-        <Chat
-          isLive={true}
-          messages={session.messages}
-          sessionHash={session.hash}
-          info={session.info}
-          send={session.send}
-        />
-      )}
-      {session.state === 'terminated' && (
-        <Chat
-          isLive={false}
-          messages={session.messages}
-          sessionHash={session.hash}
-          info={session.info}
-          send={session.send}
-        />
-      )}
+      <div className="chat">
+        <ChatStatus info={session.info} sessionHash={session.hash} isConnected={session.isLive} />
+        {session.state === 'establishing' && <EstablishingStep info={session.info} />}
+        {session.state === 'error' && (
+          <Error info={session.info} onRetry={retry} onCreateNewSession={createNewSession} />
+        )}
+        {session.state === 'created' && <CreatedStep info={session.info} sessionId={session.id} />}
+        {session.hash && <ChatFeed messages={session.messages} />}
+        <ChatInput disabled={!session.isLive} send={session.send} />
+      </div>
     </div>
   );
 };
