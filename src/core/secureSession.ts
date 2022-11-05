@@ -87,7 +87,7 @@ const computeSessionHash = (initiatorPubKey: string, guestPubKey: string, sessio
   crypto.computeHash(initiatorPubKey + guestPubKey + sessionId);
 
 const createSession = async (onSuccess: (response: string) => any) => {
-  const { socket, id: serverId } = await Promise.race(SERVER_URLS.map(fetchSocket));
+  const { socket, id: serverId } = await Promise.any(SERVER_URLS.map(fetchSocket));
 
   const keyPair = await crypto.generateKeyPair();
   const ownExportedPubKey = await crypto.exportKey(keyPair.publicKey);
